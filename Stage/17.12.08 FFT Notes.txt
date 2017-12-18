@@ -1,0 +1,48 @@
+Twee situaties:
+	A	fftSize > bufSize
+	B	bufSize >= ffSize
+
+plugin latency: 
+    if fftSize > bufSize:  fftSize / bufSize * bufSize. (bijv. 512 / 256 * 256)
+	if bufSize >= fftSize:  bufSize (256)
+
+1: 
+	+ Push new audioInputBuffer in inputDelayBuffer.
+	+ delayBuffers lengths:
+		if A:  fftSize / bufSize + 1.
+		if B:  2
+	
+2, 3, 4 is een loop:
+	+ overlap = voor de hoeveelheid overlaps. 
+		A: (bufSize / overlap) * o
+		B: (fftSize / overlap) * o
+	+ numFFTs = voor de hoeveelheid fft's per buffer: A = 1, B = bufSize / fftSize (bijv. 1024 / 256)
+		num * fftSize
+		
+		DIT MOET ALLEMAAL IN EEN BUFFER KUNNEN: fftBuffer length = 2 * fftSize;
+		fill 0's buffer -> fill fftSize aan goed uitgekozen inputSamples -> run fft, hanning, IFFT -> stop op goede plek in audio delayBuffer
+	
+{
+	2: 
+		+ fill 0's fftBuffer
+		+ fill fftBuffer from inputDelayBuffer with corresponding: overlap, nFFT (for loop fftSize)
+
+	3: 
+		+ apply Hanning
+		+ run FFT
+		+ apply modifications
+		+ run IFFT
+
+	4: 
+		+ add to outputDelayBuffer with corresponding samples: overlap, nFFT (for loop fftSize)
+}
+		
+5:
+	+ vul de outputBuffer met de eerste bufSize aan samples van de outputDelayBuffer (for loop bufSize)
+
+6: 
+	+ shift de outputDelayBuffer een bufSize naar links. (voor bufSize aan samples)
+	+ zerofill de laatste bufSize aan samples van outputDelayBuffer
+	
+7: 
+	+ shift de inputDelayBuffer een bufSize naar links.

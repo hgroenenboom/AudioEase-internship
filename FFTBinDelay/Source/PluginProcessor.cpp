@@ -24,6 +24,7 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 
 	for (int channel = 0; channel < 2; channel++) {
 		oFFT[channel] = new overlapFFT(fftFunctionP, numFFTOverlaps, fftSize);
+		oFFT[channel]->setPanData(&panLR);
 	}
 }
 

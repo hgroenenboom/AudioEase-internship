@@ -10,6 +10,9 @@ overlapFFT::overlapFFT(dsp::FFT *fftFunctionP, int numOverlaps, int fftSize)
 	this->numOverlaps = numOverlaps;
 	this->fftSize = fftSize;
 
+	for(int i = 0; i < 20; i++)
+	fftDelays[i] = new ForwardCircularDelay(numOverlaps * 420, i * 20);
+
 	//replace all 512 values with bufferSize
 	if (fftSize > 512) { //A
 		numFFTs = 1;
@@ -18,8 +21,8 @@ overlapFFT::overlapFFT(dsp::FFT *fftFunctionP, int numOverlaps, int fftSize)
 		numFFTs = 512 / fftSize;
 	}	
 
-	inputMemory = forwardBlockDelay(512, 10, 1);
-	outputMemory = forwardBlockDelay(512, 10, 1);
+	inputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize);
+	outputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize);
 
 	hanningWindow.resize(fftSize);
 	createHanningWindow();
@@ -58,9 +61,13 @@ void overlapFFT::runThroughFFTs() { // 234
 
 		fillFFTBuffer(startIndex, endIndex); //[2]
 
-		applyFFT(); //[3]
+		applyFFT(ovLap); //[3]
 
 		pushFFTDataIntoOutputDelayBuffer(startIndex, endIndex); //[4]
+	}
+
+	for (int i = 0; i < 20; i++) {
+		fftDelays[i]->adjustPointers(numOverlaps);
 	}
 }
 
@@ -75,34 +82,50 @@ void overlapFFT::fillFFTBuffer(int startIndex, int endIndex)
 }
 
 // [3]
-void overlapFFT::applyFFT() {
+void overlapFFT::applyFFT(int ovLap) {
+	//FFT
 	applyHannningWindowToFftBuffer();
-
-	float lowPassScale = 0.5;
 
 	for (int i = 0; i < fftSize; i++) {
 		timeData[i]._Val[0] = fft.fftData[i];
 		timeData[i]._Val[1] = 0.0f;
 	}
 
+	//256 complex vectors and 256 complex conjugates of the first 256 vectors
+	// i.e. 256 positive cycloids and 256 negative cycloids.
 	fftFunctionP->perform(timeData, spectralData, false);
-
-	switch (channel) {
-		case 0:
-			for (int i = 0; i < fftSize; i++) {
-				carToPol(&spectralData[i]._Val[0], &spectralData[i]._Val[1]);
-				if (i > 20) spectralData[i]._Val[0] = 0.0f;
-				polToCar(&spectralData[i]._Val[0], &spectralData[i]._Val[1]);
-			}
-			break;
-		case 1:
-			for (int i = 0; i < fftSize; i++) {
-				carToPol(&spectralData[i]._Val[0], &spectralData[i]._Val[1]);
-				if (i > 20) spectralData[i]._Val[0] = 0.0f;
-				polToCar(&spectralData[i]._Val[0], &spectralData[i]._Val[1]);
-			}
-			break;
+	
+	for (int i = 0; i < fftSize; i++) {
+		carToPol(&spectralData[i]._Val[0], &spectralData[i]._Val[1]);
+		if (i < 0.5 * fftSize) spectralData[i]._Val[0] *= 2.0f;
+		if (i > 0.5 * fftSize) spectralData[i]._Val[0] = 0.0f;
 	}
+
+	//MODIFICATIONS
+	switch (channel) {
+	case 0:
+		for (int i = 0; i < fftSize; i++) {
+			if (i > 20) spectralData[i]._Val[0] *= 1.0f - *pan;
+			if (i >= 20 & i < 40) {
+				fftDelays[i - 20]->overwriteValue(spectralData[i]._Val[0], ovLap);
+				spectralData[i]._Val[0] = fftDelays[i - 20]->readValue(ovLap);
+			}
+		}
+		break;
+	case 1:
+		for (int i = 0; i < fftSize; i++) {
+			if (i > 20) spectralData[i]._Val[0] *= *pan;
+			if (i >= 5 & i < 25) {
+				fftDelays[i - 5]->overwriteValue(spectralData[i]._Val[0], ovLap);
+				spectralData[i]._Val[0] = fftDelays[i - 5]->readValue(ovLap);
+			}
+		}
+		break;
+	}
+
+	//IFFT
+	for (int i = 0; i < fftSize; i++) 
+		polToCar(&spectralData[i]._Val[0], &spectralData[i]._Val[1]);
 
 	fftFunctionP->perform(spectralData, timeData, true);
 

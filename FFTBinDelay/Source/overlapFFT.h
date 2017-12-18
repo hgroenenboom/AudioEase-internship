@@ -14,13 +14,15 @@ class overlapFFT {
 		overlapFFT();
 		overlapFFT(dsp::FFT *fftFunctionP, int numOverlaps = 2, int fftSize = 512); //the used fft function and the amount of windows.
 
+		void setPanData(float* panData) { pan = panData; }
+
 		// [1]
 		void pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int numSamples, int channel);
 
 		// [2,3,4]
 		void runThroughFFTs(); 
 		void fillFFTBuffer(int startIndex, int endIndex); // [2]
-		void applyFFT(); // [3]
+		void applyFFT(int ovLap); // [3]
 		void applyHannningWindowToFftBuffer(); // [3.1]
 		void carToPol(float* inReOutM, float* inImOutPhi); // [3.2]
 		void polToCar(float* inMOutRe, float* inPhiOutIm); // [3.3]
@@ -37,8 +39,8 @@ class overlapFFT {
 		dsp::Complex<float> timeData[512];
 		dsp::Complex<float> spectralData[512];
 	private:
-		forwardBlockDelay outputMemory;
-		forwardBlockDelay inputMemory;
+		ForwardCircularDelay outputMemory;
+		ForwardCircularDelay inputMemory;
 		int inputCounter = 0;
 
 		int fftSize;
@@ -56,4 +58,7 @@ class overlapFFT {
 		FFTProcessor fft;
 
 		dsp::FFT *fftFunctionP;
+
+		float* pan;
+		ForwardCircularDelay* fftDelays[256];
 };
