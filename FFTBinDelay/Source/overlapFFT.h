@@ -38,6 +38,8 @@ class overlapFFT {
 
 		dsp::Complex<float> timeData[512];
 		dsp::Complex<float> spectralData[512];
+
+		ForwardCircularDelay* fftDelays[512];
 	private:
 		ForwardCircularDelay outputMemory;
 		ForwardCircularDelay inputMemory;
@@ -60,5 +62,4 @@ class overlapFFT {
 		dsp::FFT *fftFunctionP;
 
 		float* pan;
-		ForwardCircularDelay* fftDelays[256];
 };

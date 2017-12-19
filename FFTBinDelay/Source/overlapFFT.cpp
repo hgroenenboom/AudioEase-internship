@@ -1,4 +1,6 @@
 #include "overlapFFT.h"
+#include <stdlib.h>
+#include <time.h> 
 
 overlapFFT::overlapFFT() {
 }
@@ -10,19 +12,21 @@ overlapFFT::overlapFFT(dsp::FFT *fftFunctionP, int numOverlaps, int fftSize)
 	this->numOverlaps = numOverlaps;
 	this->fftSize = fftSize;
 
-	for(int i = 0; i < 20; i++)
-	fftDelays[i] = new ForwardCircularDelay(numOverlaps * 420, i * 20);
+	srand(time(NULL));
+	for (int i = 0; i < fftSize; i++) {
+		fftDelays[i] = new ForwardCircularDelay(numOverlaps * (44100 / fftSize) * 2, i * 2);
+	}
 
 	//replace all 512 values with bufferSize
-	if (fftSize > 512) { //A
+	//if (fftSize > 512) { //A
 		numFFTs = 1;
-	}
-	else if (512 >= fftSize) {			//B
-		numFFTs = 512 / fftSize;
-	}	
+	//}
+	//else if (512 >= fftSize) {			//B
+	//	numFFTs = 512 / fftSize;
+	//}	
 
-	inputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize);
-	outputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize);
+	inputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize, true);
+	outputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize, true);
 
 	hanningWindow.resize(fftSize);
 	createHanningWindow();
@@ -66,8 +70,8 @@ void overlapFFT::runThroughFFTs() { // 234
 		pushFFTDataIntoOutputDelayBuffer(startIndex, endIndex); //[4]
 	}
 
-	for (int i = 0; i < 20; i++) {
-		fftDelays[i]->adjustPointers(numOverlaps);
+	for (int i = 0; i < fftSize / 2; i++) {
+		fftDelays[i]->adjustPointers(1);
 	}
 }
 
@@ -84,7 +88,7 @@ void overlapFFT::fillFFTBuffer(int startIndex, int endIndex)
 // [3]
 void overlapFFT::applyFFT(int ovLap) {
 	//FFT
-	applyHannningWindowToFftBuffer();
+	//applyHannningWindowToFftBuffer();
 
 	for (int i = 0; i < fftSize; i++) {
 		timeData[i]._Val[0] = fft.fftData[i];
@@ -97,22 +101,30 @@ void overlapFFT::applyFFT(int ovLap) {
 	
 	for (int i = 0; i < fftSize; i++) {
 		carToPol(&spectralData[i]._Val[0], &spectralData[i]._Val[1]);
-		if (i < 0.5 * fftSize) spectralData[i]._Val[0] *= 2.0f;
-		if (i > 0.5 * fftSize) spectralData[i]._Val[0] = 0.0f;
+		//if (i < 0.5 * fftSize) spectralData[i]._Val[0] *= 2.0f;
+		if (i == 0 || i > 0.5 * fftSize) spectralData[i]._Val[0] = 0.0f; //set negative real values to 0.
 	}
 
 	//MODIFICATIONS
+	
 	switch (channel) {
 	case 0:
 		for (int i = 0; i < fftSize; i++) {
-			if (i > 20) spectralData[i]._Val[0] *= 1.0f - *pan;
-			if (i >= 20 & i < 40) {
-				fftDelays[i - 20]->overwriteValue(spectralData[i]._Val[0], ovLap);
-				spectralData[i]._Val[0] = fftDelays[i - 20]->readValue(ovLap);
+			//if (i > 20) spectralData[i]._Val[0] *= 1.0f - *pan;
+			if (i >= 0 & i < fftSize / 2) {
+				fftDelays[i]->overwriteValue(spectralData[i]._Val[0], ovLap);
+				spectralData[i]._Val[0] = fftDelays[i]->readValue(ovLap);
 			}
+			else {
+				spectralData[i]._Val[0] = 0.0f;
+			}
+
+			//fftDelays[i]->overwriteValue(spectralData[i]._Val[0], ovLap);
+			//spectralData[i]._Val[0] = fftDelays[i]->readValue(ovLap);
 		}
 		break;
 	case 1:
+		/*
 		for (int i = 0; i < fftSize; i++) {
 			if (i > 20) spectralData[i]._Val[0] *= *pan;
 			if (i >= 5 & i < 25) {
@@ -120,6 +132,7 @@ void overlapFFT::applyFFT(int ovLap) {
 				spectralData[i]._Val[0] = fftDelays[i - 5]->readValue(ovLap);
 			}
 		}
+		*/
 		break;
 	}
 

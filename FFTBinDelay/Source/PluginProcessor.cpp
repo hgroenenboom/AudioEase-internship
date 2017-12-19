@@ -153,7 +153,7 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 		transportSource.getNextAudioBlock(inputInfo);
 	}
 
-	for (int channel = 0; channel < 2; ++channel) //NOTE: nog mono
+	for (int channel = 0; channel < 1; ++channel) //NOTE: nog mono
 	{
 		// POINTERS TO BUFFER
 
@@ -168,7 +168,7 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 		} else { n++; }
     }
 
-	//buffer.clear(1, 0, buffer.getNumSamples());
+	buffer.clear(1, 0, buffer.getNumSamples());
 }
 
 //==============================================================================

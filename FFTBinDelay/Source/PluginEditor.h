@@ -42,7 +42,8 @@ public:
 	void openButtonClicked();
 
 	// slider functions
-	void newSliderValue();
+	void newPanSliderValue();
+	void newDelaySliderValue();
 	void refreshSliders();
 
 private:
@@ -54,6 +55,7 @@ private:
 	TextButton playStopButton;
 
 	Slider panSlider;
+	Slider delaySlider;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FftbinDelayAudioProcessorEditor)
 };

@@ -2,27 +2,36 @@
 
 //BlockDelay::BlockDelay() {}
 
-ForwardCircularDelay::ForwardCircularDelay(int delaySizeInSamples, int delay)
-	: memSize(delaySizeInSamples)
+ForwardCircularDelay::ForwardCircularDelay(int delaySizeInSamples, int delay, bool delayTimeIsBufferLength)
+	: memSize(delaySizeInSamples),
+	delayTimeIsBufferLength(delayTimeIsBufferLength)
 {
 	delayBuffer.resize(delaySizeInSamples); //initialize buffersize
 	fill(delayBuffer.begin(), delayBuffer.end(), 0); //zerofill buffer
 
+	delayInSamples = delay;
+	if (delayTimeIsBufferLength || delay == 0) {
+		delayModulo = memSize;
+		feedback = 0.0f;
+	} else {
+		delayModulo = delay;
+	}
+
 	currentPosition = 0;
 	writePointer = 0;
 	readPointer = (-1 * delay + memSize) % memSize;
-
-	delayInSamples = delay;
 }
 
 
 // read a value offsetted from the read pointer. default reads the current delay sample
 float ForwardCircularDelay::readValue(int index) {
+	delayBuffer[(readPointer + delayInSamples + index + memSize) % memSize] += delayBuffer[(readPointer + index + memSize) % memSize] * feedback;
+	//delayBuffer[(readPointer + delayInSamples + index + memSize) % memSize] *= feedback;
 	return delayBuffer[(readPointer + index + memSize) % memSize];
 };
 
 // write a value offsetted from the write pointer. default write the current write value location.
-void ForwardCircularDelay::overwriteValue(float value, int index, float feedback) {
+void ForwardCircularDelay::overwriteValue(float value, int index) {
 	delayBuffer[(writePointer + index + memSize) % memSize] *= feedback;
 	delayBuffer[(writePointer + index + memSize) % memSize] += value;
 };
@@ -33,6 +42,17 @@ void ForwardCircularDelay::adjustPointers(int numSteps) {
 	currentPosition %= memSize;
 	writePointer = currentPosition;
 	readPointer = (currentPosition - delayInSamples + memSize) % memSize;
+}
+
+void ForwardCircularDelay::setDelayTime(int delayTime) {
+	delayInSamples = delayTime;
+	if (delayTimeIsBufferLength || delayTime == 0 || delayTime > memSize) {
+		delayModulo = memSize;
+		feedback = 0.0f;
+	}
+	else {
+		delayModulo = delayTime;
+	} 
 }
 
 

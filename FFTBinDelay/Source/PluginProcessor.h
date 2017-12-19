@@ -60,6 +60,15 @@ public:
 
 	void setPanValue(float pan) { panLR = pan; };
 	float getPanValue() { return panLR; };
+	
+	void setDelayValue(int delay) { 
+		this->delay = delay; 
+		for (int c = 0; c < 1; c++) {
+			for (int i = 0; i < fftSize; i++) {
+				oFFT[c]->fftDelays[i]->setDelayTime((float) delay * i * 0.01 + 1.0f);
+			}
+		}
+	};
 
 	void playStopButtonClicked() {
 		if (transportSource.getLengthInSeconds() != 0.0) {
@@ -107,7 +116,7 @@ private:
 
 	ScopedPointer<dsp::FFT> fftFunctionP;
 
-	int numFFTOverlaps = 4;
+	int numFFTOverlaps = 12;
 
 	overlapFFT *oFFT[2]; //channels
 
@@ -117,6 +126,7 @@ private:
 	int n = 0;
 
 	float panLR = 0.5;
+	int delay = 1;
 
     //==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FftbinDelayAudioProcessor)

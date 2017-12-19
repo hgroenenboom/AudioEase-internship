@@ -36,6 +36,10 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	panSlider.setRange(0.0, 1.0, 0.001);
 	panSlider.addListener(this);
 
+	addAndMakeVisible(&delaySlider);
+	delaySlider.setRange(0, 80, (int)1);
+	delaySlider.addListener(this);
+
 	refreshButtons();
 	refreshSliders();
 
@@ -64,6 +68,7 @@ void FftbinDelayAudioProcessorEditor::resized()
 	openButton.setBounds(10, 10, getWidth() - 20, 20);
 	playStopButton.setBounds(10, 40, getWidth() - 20, 20);
 	panSlider.setBounds(10, 70, getWidth() - 20, 40);
+	delaySlider.setBounds(10, 150, getWidth() - 20, 180);
 }
 
 // callback when something changes in the processor.
@@ -89,7 +94,10 @@ void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
 void FftbinDelayAudioProcessorEditor::sliderValueChanged(Slider* slider) {
 	if (slider == &panSlider) {
 		//slider->setColour(slider->thumbColourId, Colours::rosybrown);
-		newSliderValue();
+		newPanSliderValue();
+	}
+	else if (slider == &delaySlider) {
+		newDelaySliderValue();
 	}
 }
 
@@ -126,8 +134,12 @@ void FftbinDelayAudioProcessorEditor::openButtonClicked() {
 	processor.openButtonClicked();
 };
 
-void FftbinDelayAudioProcessorEditor::newSliderValue() {
+void FftbinDelayAudioProcessorEditor::newPanSliderValue() {
 	processor.setPanValue( panSlider.getValue());
+};
+
+void FftbinDelayAudioProcessorEditor::newDelaySliderValue() {
+	processor.setDelayValue(delaySlider.getValue());
 };
 
 void FftbinDelayAudioProcessorEditor::refreshSliders() {
