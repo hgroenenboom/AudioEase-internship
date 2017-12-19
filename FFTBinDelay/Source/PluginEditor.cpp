@@ -60,7 +60,7 @@ void FftbinDelayAudioProcessorEditor::paint (Graphics& g)
 
     g.setColour (Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("2.4 Added working FFT Lowpass", getLocalBounds(), Justification::centred, 1);
+    g.drawFittedText ("2.4.1.1 Mono", getLocalBounds(), Justification::centred, 1);
 }
 
 void FftbinDelayAudioProcessorEditor::resized()

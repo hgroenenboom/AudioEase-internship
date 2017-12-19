@@ -26,6 +26,8 @@
       <FILE id="vFPGnP" name="singleFFT.h" compile="0" resource="0" file="Source/singleFFT.h"/>
       <FILE id="S3Akv5" name="overlapFFT.cpp" compile="1" resource="0" file="Source/overlapFFT.cpp"/>
       <FILE id="ZJ2AaA" name="overlapFFT.h" compile="0" resource="0" file="Source/overlapFFT.h"/>
+      <FILE id="sdcfeY" name="binDelay.cpp" compile="1" resource="0" file="Source/binDelay.cpp"/>
+      <FILE id="PTO7mx" name="binDelay.h" compile="0" resource="0" file="Source/binDelay.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>

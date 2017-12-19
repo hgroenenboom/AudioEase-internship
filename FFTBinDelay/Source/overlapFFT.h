@@ -8,6 +8,7 @@
 
 #include "singleFFT.h"
 #include "blockDelay.h"
+#include "binDelay.h"
 
 class overlapFFT {
 	public:
@@ -39,11 +40,11 @@ class overlapFFT {
 		dsp::Complex<float> timeData[512];
 		dsp::Complex<float> spectralData[512];
 
-		ForwardCircularDelay* fftDelays[512];
+		//ForwardCircularDelay* fftDelays[512];
 	private:
 		ForwardCircularDelay outputMemory;
 		ForwardCircularDelay inputMemory;
-		int inputCounter = 0;
+		int inputForFFTCounter = 0;
 
 		int fftSize;
 
@@ -62,4 +63,6 @@ class overlapFFT {
 		dsp::FFT *fftFunctionP;
 
 		float* pan;
+
+	public: BinDelay binDelay;
 };

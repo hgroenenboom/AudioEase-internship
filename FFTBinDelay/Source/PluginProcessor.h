@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <fstream>
+
 using namespace std;
 
 #include "../JuceLibraryCode/JuceHeader.h"
@@ -64,8 +65,9 @@ public:
 	void setDelayValue(int delay) { 
 		this->delay = delay; 
 		for (int c = 0; c < 1; c++) {
-			for (int i = 0; i < fftSize; i++) {
-				oFFT[c]->fftDelays[i]->setDelayTime((float) delay * i * 0.01 + 1.0f);
+			for (int i = 0; i < 30; i++) {
+				delayArray[i] = delay * + i * delay;
+				oFFT[c]->binDelay.setDelayTime(delayArray);
 			}
 		}
 	};
@@ -116,7 +118,7 @@ private:
 
 	ScopedPointer<dsp::FFT> fftFunctionP;
 
-	int numFFTOverlaps = 12;
+	int numFFTOverlaps = 4;
 
 	overlapFFT *oFFT[2]; //channels
 
@@ -127,6 +129,7 @@ private:
 
 	float panLR = 0.5;
 	int delay = 1;
+	int delayArray[30];
 
     //==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FftbinDelayAudioProcessor)
