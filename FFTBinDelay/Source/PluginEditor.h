@@ -40,6 +40,7 @@ public:
 	void refreshButtons();
 	void playButtonClicked();
 	void openButtonClicked();
+	void bypassButtonClicked();
 
 	// slider functions
 	void newPanSliderValue();
@@ -53,6 +54,7 @@ private:
 
 	TextButton openButton;
 	TextButton playStopButton;
+	TextButton bypassButton;
 
 	Slider panSlider;
 	Slider delaySlider;

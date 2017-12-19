@@ -116,18 +116,21 @@ private:
 		fftSize = 1 << fftOrder
 	};
 
-	ScopedPointer<dsp::FFT> fftFunctionP;
-
+	// FFT variables.
+	ScopedPointer<dsp::FFT> FFTFUNCTIONP;
 	int numFFTOverlaps = 4;
-
 	overlapFFT *oFFT[2]; //channels
 
+	// unused?
 	float* inputData[2048];
 
+	// logging
 	ofstream myfile;
 	int n = 0;
 
-	float panLR = 0.5;
+	// GUI controlled parameters
+	public: bool bypass = false;
+	private: float panLR = 0.5;
 	int delay = 1;
 	int delayArray[30];
 

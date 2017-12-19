@@ -40,6 +40,11 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	delaySlider.setRange(0, 80, (int)1);
 	delaySlider.addListener(this);
 
+	addAndMakeVisible(&bypassButton);
+	bypassButton.addListener(this);
+	playStopButton.setColour(TextButton::buttonColourId, Colours::aliceblue);
+	bypassButton.setButtonText("ByPass");
+
 	refreshButtons();
 	refreshSliders();
 
@@ -60,7 +65,7 @@ void FftbinDelayAudioProcessorEditor::paint (Graphics& g)
 
     g.setColour (Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("2.4.1.1 Mono", getLocalBounds(), Justification::centred, 1);
+    g.drawFittedText ("2.5 Mono", getLocalBounds(), Justification::bottomRight, 1);
 }
 
 void FftbinDelayAudioProcessorEditor::resized()
@@ -68,7 +73,8 @@ void FftbinDelayAudioProcessorEditor::resized()
 	openButton.setBounds(10, 10, getWidth() - 20, 20);
 	playStopButton.setBounds(10, 40, getWidth() - 20, 20);
 	panSlider.setBounds(10, 70, getWidth() - 20, 40);
-	delaySlider.setBounds(10, 150, getWidth() - 20, 180);
+	delaySlider.setBounds(10, 120, getWidth() - 20, 40);
+	bypassButton.setBounds(getWidth() / 2 - 40, 170, 80, 40);
 }
 
 // callback when something changes in the processor.
@@ -87,6 +93,9 @@ void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
 	}
 	if (button == &playStopButton) {
 		playButtonClicked();
+	}
+	if (button == &bypassButton) {
+		bypassButtonClicked();
 	}
 }
 
@@ -122,6 +131,13 @@ void FftbinDelayAudioProcessorEditor::refreshButtons() {
 	if (processor.transportSource.hasStreamFinished()) {
 		processor.transportSource.setPosition(0.0);
 	}
+
+	if (processor.bypass == true) {
+		bypassButton.setColour(TextButton::buttonColourId, Colours::green);
+	}
+	else {
+		bypassButton.setColour(TextButton::buttonColourId, Colours::black);
+	}
 }
 
 void FftbinDelayAudioProcessorEditor::playButtonClicked() {
@@ -132,6 +148,17 @@ void FftbinDelayAudioProcessorEditor::playButtonClicked() {
 void FftbinDelayAudioProcessorEditor::openButtonClicked() {
 	openButton.setColour(TextButton::buttonColourId, Colours::rebeccapurple);
 	processor.openButtonClicked();
+};
+
+void FftbinDelayAudioProcessorEditor::bypassButtonClicked() {
+	if (processor.bypass == false) {
+		bypassButton.setColour(TextButton::buttonColourId, Colours::green);
+		processor.bypass = true;
+	}
+	else {
+		bypassButton.setColour(TextButton::buttonColourId, Colours::black);
+		processor.bypass = false;
+	}
 };
 
 void FftbinDelayAudioProcessorEditor::newPanSliderValue() {

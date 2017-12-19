@@ -16,14 +16,14 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 				)
 #endif
 {
-	fftFunctionP = new dsp::FFT(fftOrder);
+	FFTFUNCTIONP = new dsp::FFT(fftOrder);
 
 	formatManager.registerBasicFormats();       // [1]
 	//OutputDebugString(("hoe werkt dit?"));
 	myfile.open("myLog.txt");
 
 	for (int channel = 0; channel < 2; channel++) {
-		oFFT[channel] = new overlapFFT(fftFunctionP, numFFTOverlaps, fftSize);
+		oFFT[channel] = new overlapFFT(FFTFUNCTIONP, numFFTOverlaps, fftSize);
 		oFFT[channel]->setPanData(&panLR);
 	}
 }
@@ -153,20 +153,23 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 		transportSource.getNextAudioBlock(inputInfo);
 	}
 
-	for (int channel = 0; channel < 1; ++channel) //NOTE: nog mono
-	{
-		// POINTERS TO BUFFER
+	if (bypass == false) {
+		for (int channel = 0; channel < 1; ++channel) //NOTE: nog mono
+		{
+			// POINTERS TO BUFFER
 
-		// FFT INPUT, MODIFICATIONS & OUTPUT: loop through every sample of the buffer and perform fft if fftSize samples have been received
-		oFFT[channel]->pushDataIntoMemoryAndPerformFFTs(buffer, buffer.getNumSamples(), channel);						   
-		
-		// LOG TO FILE
-		if(panLR != 0.5) myfile << "panning: " << panLR << "\n";
-		if (buffer.getNumSamples() != 512) {
-			myfile << "current callbackSize: " << buffer.getNumSamples() << "\n";
-			myfile << "current callback: " << n++ << "\n";
-		} else { n++; }
-    }
+			// FFT INPUT, MODIFICATIONS & OUTPUT: loop through every sample of the buffer and perform fft if fftSize samples have been received
+			oFFT[channel]->pushDataIntoMemoryAndPerformFFTs(buffer, buffer.getNumSamples(), channel);
+
+			// LOG TO FILE
+			if (panLR != 0.5) myfile << "panning: " << panLR << "\n";
+			if (buffer.getNumSamples() != 512) {
+				myfile << "current callbackSize: " << buffer.getNumSamples() << "\n";
+				myfile << "current callback: " << n++ << "\n";
+			}
+			else { n++; }
+		}
+	}
 
 	buffer.clear(1, 0, buffer.getNumSamples());
 }
