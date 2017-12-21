@@ -15,7 +15,7 @@ BinDelay::BinDelay(int fftSize, int numOverlaps)
 	createIndexArray();
 
 	for (int i = 0; i < nBins; i++) {
-		delays[i] = new ForwardCircularDelay(numOverlaps * (44100 / fftSize) * 4, i * 16, true, numBinsArray[i]);
+		delays[i] = new ForwardCircularDelay(numOverlaps * (44100 / fftSize) * 4, i * 16, false, numBinsArray[i]);
 	}
 }
 

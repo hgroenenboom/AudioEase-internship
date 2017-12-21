@@ -105,22 +105,23 @@ void overlapFFT::applyFFT(int ovLap) {
 
 	//256 complex vectors and 256 complex conjugates of the first 256 vectors
 	// i.e. 256 positive cycloids and 256 negative cycloids.
-	fftFunctionP->perform(timeData, spectralData, false);
+	fftFunctionP->perform(timeData, spectralDataIn, false);
 
 	for (int i = 0; i < fftSize; i++) {
-		carToPol(&spectralData[i]._Val[0], &spectralData[i]._Val[1]);
-		//if (i < 0.5 * fftSize) spectralData[i]._Val[0] *= 2.0f;
-		if (i == 0 || i > 0.5 * fftSize) spectralData[i]._Val[0] = 0.0f; //set negative real values to 0.
+		carToPol(&spectralDataIn[i]._Val[0], &spectralDataIn[i]._Val[1]);
+		//if (i < 0.5 * fftSize) spectralDataIn[i]._Val[0] *= 2.0f;
+		if (i == 0 || i > 0.5 * fftSize) spectralDataIn[i]._Val[0] = 0.0f; //set negative real values to 0.
+		spectralDataOut[i] = spectralDataIn[i];
 	}
 
 
 	//MODIFICATIONS	
-	binDelay.pushMagnitudesIntoDelay(spectralData);
-	binDelay.getOutputMagnitudes(spectralData);
+	binDelay.getOutputMagnitudes(spectralDataOut);
+	binDelay.pushMagnitudesIntoDelay(spectralDataIn);
 	binDelay.adjustPointers();
 
 	for (int i = fftSize / 2; i < fftSize; i++) {
-		spectralData[i]._Val[0] = 0.0f;
+		spectralDataOut[i]._Val[0] = 0.0f;
 	}
 
 	/*
@@ -132,9 +133,9 @@ void overlapFFT::applyFFT(int ovLap) {
 
 	////IFFT
 	for (int i = 0; i < fftSize; i++) 
-		polToCar(&spectralData[i]._Val[0], &spectralData[i]._Val[1]);
+		polToCar(&spectralDataOut[i]._Val[0], &spectralDataOut[i]._Val[1]);
 
-	fftFunctionP->perform(spectralData, timeData, true);
+	fftFunctionP->perform(spectralDataOut, timeData, true);
 
 	for (int i = 0; i < fftSize; i++) {
 		fft.fftData[i] = timeData[i].real();

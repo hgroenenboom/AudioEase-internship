@@ -38,7 +38,8 @@ class overlapFFT {
 		void createHanningWindow();
 
 		dsp::Complex<float> timeData[512];
-		dsp::Complex<float> spectralData[512];
+		dsp::Complex<float> spectralDataIn[512];
+		dsp::Complex<float> spectralDataOut[512];
 
 		//ForwardCircularDelay* fftDelays[512];
 	private:
