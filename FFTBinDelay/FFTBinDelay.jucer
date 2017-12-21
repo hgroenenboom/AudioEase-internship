@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="OxeLyD" name="FFTBinDelay" displaySplashScreen="1" reportAppUsage="1"
-              splashScreenColour="Dark" projectType="audioplug" version="1.0.0"
+              splashScreenColour="Dark" projectType="audioplug" version="2.5.1"
               bundleIdentifier="com.yourcompany.FFTBinDelay" includeBinaryInAppConfig="1"
-              cppLanguageStandard="11" companyCopyright="" buildVST="1" buildVST3="0"
-              buildAU="1" buildAUv3="0" buildRTAS="0" buildAAX="0" buildStandalone="1"
-              enableIAA="0" pluginName="FFTBinDelay" pluginDesc="FFTBinDelay"
+              cppLanguageStandard="11" companyCopyright="GreenSounds" buildVST="1"
+              buildVST3="0" buildAU="1" buildAUv3="0" buildRTAS="0" buildAAX="0"
+              buildStandalone="1" enableIAA="0" pluginName="FFTBinDelay" pluginDesc="FFTBinDelay"
               pluginManufacturer="yourcompany" pluginManufacturerCode="Manu"
               pluginCode="Oxel" pluginChannelConfigs="" pluginIsSynth="0" pluginWantsMidiIn="0"
               pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0" pluginEditorRequiresKeys="0"
               pluginAUExportPrefix="FFTBinDelayAU" pluginRTASCategory="" aaxIdentifier="com.yourcompany.FFTBinDelay"
-              pluginAAXCategory="AAX_ePlugInCategory_Dynamics" jucerVersion="5.2.0">
+              pluginAAXCategory="AAX_ePlugInCategory_Dynamics" jucerVersion="5.2.0"
+              companyName="GreenSounds" companyEmail="haroldgroenenboom@gmail.com">
   <MAINGROUP id="pORTYO" name="FFTBinDelay">
     <GROUP id="{904BC46F-D7BB-1525-D1DD-4B7F367B7A61}" name="Source">
       <FILE id="NhW8NP" name="blockDelay.cpp" compile="1" resource="0" file="Source/blockDelay.cpp"/>
@@ -28,10 +29,12 @@
       <FILE id="ZJ2AaA" name="overlapFFT.h" compile="0" resource="0" file="Source/overlapFFT.h"/>
       <FILE id="sdcfeY" name="binDelay.cpp" compile="1" resource="0" file="Source/binDelay.cpp"/>
       <FILE id="PTO7mx" name="binDelay.h" compile="0" resource="0" file="Source/binDelay.h"/>
+      <FILE id="FHlgo5" name="MultiSlider.cpp" compile="1" resource="0" file="Source/MultiSlider.cpp"/>
+      <FILE id="vWKV7S" name="MultiSlider.h" compile="0" resource="0" file="Source/MultiSlider.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <VS2017 targetFolder="Builds/VisualStudio2017">
+    <VS2017 targetFolder="Builds/VisualStudio2017" windowsTargetPlatformVersion="10.0.16299.0">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" winWarningLevel="4" generateManifest="1" winArchitecture="x64"
                        debugInformationFormat="ProgramDatabase" enablePluginBinaryCopyStep="0"

@@ -15,6 +15,7 @@ class ForwardCircularDelay {
 		//
 		// read a value offsetted from the read pointer.
 		float readValue(int index = 0);
+		void feedBack(int index = 0, float feedback = 0);
 		// write a value offsetted from the write pointer.
 		void addValue(float value, int index = 0);
 		// adjust the pointers after the delay has received the expected amount of samples.
@@ -38,6 +39,7 @@ class ForwardCircularDelay {
 		int memSize;
 
 		float feedback = 0.0;
+		float feedbackControl = 1.0f;
 
 		// delay length in blocks.
 		int delayInBlocks;

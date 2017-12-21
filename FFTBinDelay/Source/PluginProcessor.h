@@ -59,57 +59,30 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-	void setPanValue(float pan) { panLR = pan; };
+	void setFeedbackValue(float feedback) {
+		for (int i = 0; i < 2; i++) {
+			oFFT[i]->binDelay.setFeedback(feedback);
+		}
+	}
+
 	float getPanValue() { return panLR; };
 	
-	void setDelayValue(int delay) { 
-		this->delay = delay; 
-		for (int c = 0; c < 1; c++) {
-			for (int i = 0; i < 30; i++) {
-				delayArray[i] = delay * + i * delay;
-				oFFT[c]->binDelay.setDelayTime(delayArray);
-			}
-		}
-	};
-
-	void playStopButtonClicked() {
-		if (transportSource.getLengthInSeconds() != 0.0) {
-			if (transportSource.isPlaying()) {
-				transportSource.stop();
-				transportSource.setPosition(0.0);
-			}
-			else {
-				transportSource.start();
-			}
+	void setDelaySliderValue(int index, int value) {
+		delayArray[index] = value;
+		for (int c = 0; c < 2; c++) {
+			oFFT[c]->binDelay.setDelayTime(delayArray);
 		}
 	}
+	void setDelayValue(int delay);
+	int getDelayValue() { return delay;  }
 
-	void openButtonClicked()
-	{
-		FileChooser chooser("Select a Wave file to play...",
-			File::nonexistent,
-			"*.wav");                                        // [7]
+	void playStopButtonClicked();
+	void openButtonClicked();
 
-		if (chooser.browseForFileToOpen())                                    // [8]
-		{
-			File file(chooser.getResult());                                  // [9]
-			AudioFormatReader* reader = formatManager.createReaderFor(file); // [10]
-
-			if (reader != nullptr)
-			{
-				ScopedPointer<AudioFormatReaderSource> newSource = new AudioFormatReaderSource(reader, true); // [11]
-				transportSource.setSource(newSource, 0, nullptr, reader->sampleRate);                         // [12]
-				//playButton.setEnabled(true);                                                                  // [13]
-				transportSource.sendChangeMessage();
-				readerSource = newSource.release();                                                            // [14]
-			}
-		}
-	}
-
+	// filePlaying
 	AudioFormatManager formatManager;
 	ScopedPointer<AudioFormatReaderSource> readerSource;
 	AudioTransportSource transportSource;
-
 private:
 	enum {
 		fftOrder = 9,
@@ -118,7 +91,7 @@ private:
 
 	// FFT variables.
 	ScopedPointer<dsp::FFT> FFTFUNCTIONP;
-	int numFFTOverlaps = 4;
+	int numFFTOverlaps = 8;
 	overlapFFT *oFFT[2]; //channels
 
 	// unused?
@@ -132,7 +105,7 @@ private:
 	public: bool bypass = false;
 	private: float panLR = 0.5;
 	int delay = 1;
-	int delayArray[30];
+	int delayArray[fftSize];
 
     //==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FftbinDelayAudioProcessor)

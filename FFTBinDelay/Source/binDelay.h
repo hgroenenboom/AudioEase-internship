@@ -30,17 +30,21 @@ class BinDelay {
 		void getOutputMagnitudes(dsp::Complex<float> * writeFFT);
 
 		void setDelayTime(int * delayArray);
+		void setFeedback(float feedback) { this->feedback = feedback; }
 	private:
 		ofstream myfile;
 
+		// indexing parameters
 		int linR = 5;
 		int linDR = 10;
-		static constexpr int nBins = 30;
+		static constexpr int nBins = 30; // Zijn deze types te initializen in de constructor?
 
 		dsp::Complex<float> outBuffer[512]; // TODO niet hardcoded
 		ForwardCircularDelay* delays[nBins];
 		int indexArray[nBins];
 		int numBinsArray[nBins];
+
+		float feedback = 0.7;
 
 		int fftSize;
 };

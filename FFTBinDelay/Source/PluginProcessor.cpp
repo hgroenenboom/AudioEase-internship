@@ -1,4 +1,4 @@
-//#include "WinBase.h" // voor de outputDebugString
+
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
@@ -18,13 +18,15 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 {
 	FFTFUNCTIONP = new dsp::FFT(fftOrder);
 
-	formatManager.registerBasicFormats();       // [1]
-	//OutputDebugString(("hoe werkt dit?"));
+	formatManager.registerBasicFormats(); 
 	myfile.open("myLog.txt");
+
+	for (int i = 0; i < (sizeof(delayArray) / sizeof(delayArray[0])); i++) {
+		delayArray[i] = 1;
+	}
 
 	for (int channel = 0; channel < 2; channel++) {
 		oFFT[channel] = new overlapFFT(FFTFUNCTIONP, numFFTOverlaps, fftSize);
-		oFFT[channel]->setPanData(&panLR);
 	}
 }
 
@@ -154,7 +156,7 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 	}
 
 	if (bypass == false) {
-		for (int channel = 0; channel < 1; ++channel) //NOTE: nog mono
+		for (int channel = 0; channel < 2; ++channel) //NOTE: nog mono
 		{
 			// POINTERS TO BUFFER
 
@@ -171,7 +173,7 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 		}
 	}
 
-	buffer.clear(1, 0, buffer.getNumSamples());
+	//buffer.clear(1, 0, buffer.getNumSamples());
 }
 
 //==============================================================================
@@ -204,4 +206,47 @@ void FftbinDelayAudioProcessor::setStateInformation (const void* data, int sizeI
 AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new FftbinDelayAudioProcessor();
+}
+
+void FftbinDelayAudioProcessor::setDelayValue(int delay) {
+	this->delay = delay;
+	for (int c = 0; c < 2; c++) {
+		for (int i = 0; i < 30; i++) {
+			delayArray[i] = delay * + i * delay;
+		}
+		oFFT[c]->binDelay.setDelayTime(delayArray);
+	}
+}
+
+void FftbinDelayAudioProcessor::playStopButtonClicked() {
+	if (transportSource.getLengthInSeconds() != 0.0) {
+		if (transportSource.isPlaying()) {
+			transportSource.stop();
+			transportSource.setPosition(0.0);
+		}
+		else {
+			transportSource.start();
+		}
+	}
+}
+
+void FftbinDelayAudioProcessor::openButtonClicked() {
+	FileChooser chooser("Select a Wave file to play...",
+		File::nonexistent,
+		"*.wav");                                        // [7]
+
+	if (chooser.browseForFileToOpen())                                    // [8]
+	{
+		File file(chooser.getResult());                                  // [9]
+		AudioFormatReader* reader = formatManager.createReaderFor(file); // [10]
+
+		if (reader != nullptr)
+		{
+			ScopedPointer<AudioFormatReaderSource> newSource = new AudioFormatReaderSource(reader, true); // [11]
+			transportSource.setSource(newSource, 0, nullptr, reader->sampleRate);                         // [12]
+																										  //playButton.setEnabled(true);                                                                  // [13]
+			transportSource.sendChangeMessage();
+			readerSource = newSource.release();                                                            // [14]
+		}
+	}
 }

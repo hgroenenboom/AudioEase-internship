@@ -27,7 +27,9 @@ overlapFFT::overlapFFT(dsp::FFT *fftFunctionP, int numOverlaps, int fftSize)
 	//}	
 
 	inputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize, 1, true);
+	DBG("InputMemory");
 	outputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize, 1, true);
+	DBG("OutputMemory ");
 
 	hanningWindow.resize(fftSize);
 	createHanningWindow();
@@ -41,8 +43,9 @@ void overlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int
 
 	for (int i = 0; i < numSamples; i++) {
 		// [1]
+		inputMemory.feedBack(0, 0.0f); 
 		inputMemory.pushSingleValue(channelData[i]); //push new data into the inputMemory. The memory will shift it's own pointer.
-		
+
 		//count if enough samples are collected for the FFT calculations
 		inputForFFTCounter++; 
 		inputForFFTCounter %= fftSize;
@@ -53,7 +56,7 @@ void overlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int
 			adjustMemoryPointersAndClearOutputMemory(); // [6,7]
 		}
 
-		outBuffer[i] = getOutputData() * (1.0f / numOverlaps);	
+		outBuffer[i] = getOutputData() * (1.0f / (numOverlaps / 2));	
 	}
 }
 
@@ -112,27 +115,20 @@ void overlapFFT::applyFFT(int ovLap) {
 
 
 	//MODIFICATIONS	
+	binDelay.pushMagnitudesIntoDelay(spectralData);
+	binDelay.getOutputMagnitudes(spectralData);
+	binDelay.adjustPointers();
+
+	for (int i = fftSize / 2; i < fftSize; i++) {
+		spectralData[i]._Val[0] = 0.0f;
+	}
+
+	/*
 	switch (channel) {
 	case 0:
-		binDelay.pushMagnitudesIntoDelay(spectralData);
-		binDelay.getOutputMagnitudes(spectralData);
-		binDelay.adjustPointers();
-
-		for (int i = 0; i < fftSize; i++) {
-			//if (i > 20) spectralData[i]._Val[0] *= 1.0f - *pan;
-			
-			if (i >= 0 & i < fftSize / 2) {
-				//fftDelays[i]->addValue( spectralData[i]._Val[0]);
-				//spectralData[i]._Val[0] = fftDelays[i]->readValue();
-			}
-			else {
-				spectralData[i]._Val[0] = 0.0f;
-			}
-		}
-		break;
 	case 1:
-		break;
 	}
+	*/
 
 	////IFFT
 	for (int i = 0; i < fftSize; i++) 
@@ -195,7 +191,7 @@ float overlapFFT::getOutputData() {
 
 // [6, 7]
 void overlapFFT::adjustMemoryPointersAndClearOutputMemory() {
-	outputMemory.clearBufferData(2 * fftSize, 3 * fftSize);
+	outputMemory.clearBufferData(-1 * fftSize, 0);
 
 	inputMemory.adjustPointers(512);
 	outputMemory.adjustPointers(512);

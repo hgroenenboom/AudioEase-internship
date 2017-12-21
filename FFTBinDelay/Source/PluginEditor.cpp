@@ -16,11 +16,14 @@
 //==============================================================================
 FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAudioProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
+	, mSlider(p)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
 
 	setSize(400, 300);
+
+	addAndMakeVisible(&mSlider);
 
 	addAndMakeVisible(&openButton);
 	openButton.setButtonText("Open...");
@@ -32,13 +35,9 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	playStopButton.setColour(TextButton::buttonColourId, Colours::green);
 	playStopButton.setEnabled(true);
 
-	addAndMakeVisible(&panSlider);
-	panSlider.setRange(0.0, 1.0, 0.001);
-	panSlider.addListener(this);
-
-	addAndMakeVisible(&delaySlider);
-	delaySlider.setRange(0, 80, (int)1);
-	delaySlider.addListener(this);
+	addAndMakeVisible(&feedbackSlider);
+	feedbackSlider.addListener(this);
+	feedbackSlider.setRange(0.0, 1.0, 0.001);
 
 	addAndMakeVisible(&bypassButton);
 	bypassButton.addListener(this);
@@ -48,7 +47,7 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	refreshButtons();
 	refreshSliders();
 
-	setSize(300, 300);
+	setSize(500, 500);
 
 	processor.transportSource.addChangeListener(this);   // zorgt ervoor dat elke change in transportSource de listener functie acti
 }
@@ -65,16 +64,23 @@ void FftbinDelayAudioProcessorEditor::paint (Graphics& g)
 
     g.setColour (Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("2.5 Mono", getLocalBounds(), Justification::bottomRight, 1);
+    g.drawFittedText ("2.5.2 Stereo Chaotic Delay's", getLocalBounds(), Justification::bottomRight, 1);
 }
 
 void FftbinDelayAudioProcessorEditor::resized()
 {
-	openButton.setBounds(10, 10, getWidth() - 20, 20);
-	playStopButton.setBounds(10, 40, getWidth() - 20, 20);
-	panSlider.setBounds(10, 70, getWidth() - 20, 40);
-	delaySlider.setBounds(10, 120, getWidth() - 20, 40);
-	bypassButton.setBounds(getWidth() / 2 - 40, 170, 80, 40);
+	auto space = getLocalBounds();
+
+	auto topHeader = space.removeFromTop(50);
+	openButton.setBounds(topHeader.removeFromLeft(getWidth() / 3));
+	playStopButton.setBounds(topHeader.removeFromLeft(getWidth() / 3));
+	bypassButton.setBounds(topHeader.removeFromLeft(getWidth() / 3));
+
+	auto midHeader = space.removeFromTop(50);
+	feedbackSlider.setBounds(midHeader.removeFromTop( midHeader.getHeight()) );
+
+	space.reduce(50, 50);
+	mSlider.setBounds(space);
 }
 
 // callback when something changes in the processor.
@@ -101,12 +107,9 @@ void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
 
 // the overrided abstract sliderValueChanged function. Called if a slider value is changed.
 void FftbinDelayAudioProcessorEditor::sliderValueChanged(Slider* slider) {
-	if (slider == &panSlider) {
+	if (slider == &feedbackSlider) {
 		//slider->setColour(slider->thumbColourId, Colours::rosybrown);
-		newPanSliderValue();
-	}
-	else if (slider == &delaySlider) {
-		newDelaySliderValue();
+		newFeedbackSliderValue();
 	}
 }
 
@@ -161,15 +164,11 @@ void FftbinDelayAudioProcessorEditor::bypassButtonClicked() {
 	}
 };
 
-void FftbinDelayAudioProcessorEditor::newPanSliderValue() {
-	processor.setPanValue( panSlider.getValue());
-};
-
-void FftbinDelayAudioProcessorEditor::newDelaySliderValue() {
-	processor.setDelayValue(delaySlider.getValue());
+void FftbinDelayAudioProcessorEditor::newFeedbackSliderValue() {
+	processor.setFeedbackValue( feedbackSlider.getValue());
 };
 
 void FftbinDelayAudioProcessorEditor::refreshSliders() {
-	panSlider.setValue( processor.getPanValue());
+	feedbackSlider.setValue( processor.getPanValue());
 };
 

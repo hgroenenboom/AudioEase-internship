@@ -13,7 +13,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
 #include "singleFFT.h"
-
+#include "MultiSlider.h"
 
 //==============================================================================
 /**
@@ -43,8 +43,7 @@ public:
 	void bypassButtonClicked();
 
 	// slider functions
-	void newPanSliderValue();
-	void newDelaySliderValue();
+	void newFeedbackSliderValue();
 	void refreshSliders();
 
 private:
@@ -52,12 +51,15 @@ private:
 	// access the processor object that created it.
 	FftbinDelayAudioProcessor& processor;
 
+	int nButtons = 4;
 	TextButton openButton;
 	TextButton playStopButton;
 	TextButton bypassButton;
+	TextButton rangeButton;
 
-	Slider panSlider;
-	Slider delaySlider;
+	Slider feedbackSlider;
+
+	MultiSlider mSlider;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FftbinDelayAudioProcessorEditor)
 };
