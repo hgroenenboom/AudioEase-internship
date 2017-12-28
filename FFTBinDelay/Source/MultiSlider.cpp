@@ -1,27 +1,12 @@
-/*
-  ==============================================================================
-
-    MultiSlider.cpp
-    Created: 20 Dec 2017 10:56:59am
-    Author:  Harold
-
-  ==============================================================================
-*/
 
 #include "MultiSlider.h"
 
 MultiSlider::MultiSlider(FftbinDelayAudioProcessor& p)
 	: processor(p)
 {
-
-	for (int i = 0; i < numSliders; i++) {
-		delayValues[i] = 1.0;
-
-		multiSlider[i] = new Slider();
-		//addAndMakeVisible( multiSlider[i]);
-		//multiSlider[i]->setSliderStyle(Slider::SliderStyle::LinearVertical);
-		//multiSlider[i]->addListener(this);
-		//multiSlider[i]->setRange(0, 1000, int(1));
+	// Init delay values
+	for (int i = 0; i < nSliders; i++) {
+		delaySliderValues[i] = 1.0;
 	}
 }
 
@@ -30,29 +15,66 @@ void MultiSlider::paint(Graphics& g) {
 	g.drawRect(getLocalBounds());
 
 	g.setColour(Colours::white);
-	for (int i = 0; i < numSliders; i++) {
-		g.drawRect(i * (getWidth() / numSliders), (int) (delayValues[i] * getHeight()), getWidth() / numSliders, 1);
+	for (int i = 0; i < nSliders; i++) {
+		g.drawRect(i * (getWidth() / nSliders)
+			, (int) (delaySliderValues[i] * getHeight())
+			, getWidth() / nSliders
+			, 1);
 	}
 };
 
 void MultiSlider::resized() {
-	auto bounds = getLocalBounds();
-	//bounds.reduce(20, 20);
-
-	//auto slidersInBound = bounds;
-	//for (int i = 0; i < numSliders; i++) {
-	//	multiSlider[i]->setBounds(slidersInBound.removeFromLeft(bounds.getWidth() / numSliders) );
-	//}
 }
 
-void MultiSlider::sliderValueChanged(Slider* slider) {
-	for (int i = 0; i < numSliders; i++) {
-		if (slider == multiSlider[i]) {
-			//newDelaySliderValue(i);
-		}
+void MultiSlider::mouseEnter(const MouseEvent& event) {
+	mouseIsInsideComponent = true;
+};
+
+void MultiSlider::mouseExit(const MouseEvent& event) {
+	mouseIsInsideComponent = false;
+};
+
+void MultiSlider::mouseDrag(const MouseEvent& event) {
+	reactToMouseValues(event);
+};
+
+void MultiSlider::mouseDown(const MouseEvent& event) {
+	reactToMouseValues(event);
+}
+
+void MultiSlider::reactToMouseValues(const MouseEvent& event) {
+	if (mouseIsInsideComponent) {
+		int yPixel = max(min(event.getPosition().getY(), getHeight()), 0);
+		int index = event.getPosition().getX() / (getWidth() / nSliders);
+		index = min(max(index, 0), nSliders - 1);
+
+		delaySliderValues[index] = (float)yPixel / getHeight();
+		setBinDelayTimeValue(index, 
+			min(1.0f, max(0.0f, (delaySliderValues[index])) )
+		);
+
+		repaint();
 	}
+};
+
+void MultiSlider::setBinDelayTimeValue(int index, float value) {
+	processor.setBinDelayTime(index, value);
 }
 
-void MultiSlider::newDelaySliderValue(int index, int value) {
-	processor.setDelaySliderValue(index, value);
+float* MultiSlider::getSliderValues() {
+	return delaySliderValues;
+}
+
+void MultiSlider::refreshDelaySliderValues(float* newDelays) {
+	for (int i = 0; i < nSliders; i++) {
+		delaySliderValues[i] = newDelays[i];
+		//DBG("new value " << delaySliderValues[i]);
+	}
+	repaint();
+}
+
+void MultiSlider::refreshBinDelayTimeValues() {
+	for (int i = 0; i < nSliders; i++) {
+		setBinDelayTimeValue(i, delaySliderValues[i]);
+	}
 }

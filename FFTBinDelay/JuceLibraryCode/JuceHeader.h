@@ -42,7 +42,7 @@
 namespace ProjectInfo
 {
     const char* const  projectName    = "FFTBinDelay";
-    const char* const  versionString  = "2.5.1";
-    const int          versionNumber  = 0x20501;
+    const char* const  versionString  = "2.6";
+    const int          versionNumber  = 0x20600;
 }
 #endif

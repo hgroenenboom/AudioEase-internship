@@ -10,7 +10,6 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include "singleFFT.h"
 
 
 //==============================================================================
@@ -44,6 +43,10 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	playStopButton.setColour(TextButton::buttonColourId, Colours::aliceblue);
 	bypassButton.setButtonText("ByPass");
 
+	addAndMakeVisible(&delayRangeButton);
+	delayRangeButton.addListener(this);
+	delayRangeButton.setButtonText("delayTime * 100");
+
 	refreshButtons();
 	refreshSliders();
 
@@ -64,7 +67,7 @@ void FftbinDelayAudioProcessorEditor::paint (Graphics& g)
 
     g.setColour (Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("2.5.2 Stereo Chaotic Delay's", getLocalBounds(), Justification::bottomRight, 1);
+    g.drawFittedText ("2.6.1 Stereo Chaotic Delay's. Files cleaned and working on the TODO list", getLocalBounds(), Justification::bottomRight, 1);
 }
 
 void FftbinDelayAudioProcessorEditor::resized()
@@ -72,9 +75,10 @@ void FftbinDelayAudioProcessorEditor::resized()
 	auto space = getLocalBounds();
 
 	auto topHeader = space.removeFromTop(50);
-	openButton.setBounds(topHeader.removeFromLeft(getWidth() / 3));
-	playStopButton.setBounds(topHeader.removeFromLeft(getWidth() / 3));
-	bypassButton.setBounds(topHeader.removeFromLeft(getWidth() / 3));
+	openButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+	playStopButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+	bypassButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+	delayRangeButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 
 	auto midHeader = space.removeFromTop(50);
 	feedbackSlider.setBounds(midHeader.removeFromTop( midHeader.getHeight()) );
@@ -88,20 +92,6 @@ void FftbinDelayAudioProcessorEditor::changeListenerCallback(ChangeBroadcaster* 
 {
 	if (source == &processor.transportSource) {
 		refreshButtons();
-	}
-}
-
-// the overrided abstract button clicked function. Called when a button is clicked.
-void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
-{
-	if (button == &openButton) {
-		openButtonClicked();
-	}
-	if (button == &playStopButton) {
-		playButtonClicked();
-	}
-	if (button == &bypassButton) {
-		bypassButtonClicked();
 	}
 }
 
@@ -141,6 +131,34 @@ void FftbinDelayAudioProcessorEditor::refreshButtons() {
 	else {
 		bypassButton.setColour(TextButton::buttonColourId, Colours::black);
 	}
+
+	refreshRangeButton();
+}
+
+void FftbinDelayAudioProcessorEditor::refreshRangeButton() {
+	if (processor.delayTime == rangeHigh) {
+		delayRangeButton.setColour(TextButton::buttonColourId, Colours::green);
+	}
+	else {
+		delayRangeButton.setColour(TextButton::buttonColourId, Colours::black);
+	}
+}
+
+// the overrided abstract button clicked function. Called when a button is clicked.
+void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
+{
+	if (button == &openButton) {
+		openButtonClicked();
+	}
+	if (button == &playStopButton) {
+		playButtonClicked();
+	}
+	if (button == &bypassButton) {
+		bypassButtonClicked();
+	}
+	if (button == &delayRangeButton) {
+		rangeButtonClicked();
+	}
 }
 
 void FftbinDelayAudioProcessorEditor::playButtonClicked() {
@@ -164,11 +182,29 @@ void FftbinDelayAudioProcessorEditor::bypassButtonClicked() {
 	}
 };
 
+void FftbinDelayAudioProcessorEditor::rangeButtonClicked() {
+	if (processor.delayTime == rangeHigh) {
+		delayRangeButton.setColour(TextButton::buttonColourId, Colours::black);
+		processor.delayTime = rangeLow;
+		delayRangeButton.setButtonText("Short");
+		delayRangeButton.setColour(TextButton::textColourOffId, Colours::lightblue);
+	}
+	else {
+		delayRangeButton.setColour(TextButton::buttonColourId, Colours::green);
+		processor.delayTime = rangeHigh;
+		delayRangeButton.setButtonText("Long");
+		delayRangeButton.setColour(TextButton::textColourOffId, Colours::white);
+	}
+
+	mSlider.refreshBinDelayTimeValues();
+}
+
 void FftbinDelayAudioProcessorEditor::newFeedbackSliderValue() {
 	processor.setFeedbackValue( feedbackSlider.getValue());
 };
 
 void FftbinDelayAudioProcessorEditor::refreshSliders() {
-	feedbackSlider.setValue( processor.getPanValue());
+	feedbackSlider.setValue( processor.getFeedbackValue());
+	mSlider.refreshDelaySliderValues(processor.getBinDelayArray());
 };
 

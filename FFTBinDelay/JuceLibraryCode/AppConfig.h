@@ -321,7 +321,7 @@
  #define JucePlugin_Desc                   "FFTBinDelay"
 #endif
 #ifndef  JucePlugin_Manufacturer
- #define JucePlugin_Manufacturer           "yourcompany"
+ #define JucePlugin_Manufacturer           "GreenSounds"
 #endif
 #ifndef  JucePlugin_ManufacturerWebsite
  #define JucePlugin_ManufacturerWebsite    ""
@@ -351,13 +351,13 @@
  #define JucePlugin_EditorRequiresKeyboardFocus  0
 #endif
 #ifndef  JucePlugin_Version
- #define JucePlugin_Version                2.5.1
+ #define JucePlugin_Version                2.6
 #endif
 #ifndef  JucePlugin_VersionCode
- #define JucePlugin_VersionCode            0x20501
+ #define JucePlugin_VersionCode            0x20600
 #endif
 #ifndef  JucePlugin_VersionString
- #define JucePlugin_VersionString          "2.5.1"
+ #define JucePlugin_VersionString          "2.6"
 #endif
 #ifndef  JucePlugin_VSTUniqueID
  #define JucePlugin_VSTUniqueID            JucePlugin_PluginCode
@@ -423,5 +423,5 @@
  #define JucePlugin_IAASubType             JucePlugin_PluginCode
 #endif
 #ifndef  JucePlugin_IAAName
- #define JucePlugin_IAAName                "yourcompany: FFTBinDelay"
+ #define JucePlugin_IAAName                "GreenSounds: FFTBinDelay"
 #endif

@@ -12,7 +12,6 @@
 using namespace std;
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "singleFFT.h"
 #include "overlapFFT.h"
 #include "blockDelay.h"
 
@@ -59,53 +58,52 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-	void setFeedbackValue(float feedback) {
-		for (int i = 0; i < 2; i++) {
-			oFFT[i]->binDelay.setFeedback(feedback);
-		}
-	}
-
-	float getPanValue() { return panLR; };
-	
-	void setDelaySliderValue(int index, int value) {
-		delayArray[index] = value;
-		for (int c = 0; c < 2; c++) {
-			oFFT[c]->binDelay.setDelayTime(delayArray);
-		}
-	}
-	void setDelayValue(int delay);
-	int getDelayValue() { return delay;  }
+	// GUI functions.
+	void setFeedbackValue(float feedback);	
+	float getFeedbackValue();
+	void setBinDelayTime(int index, float value);
+	float* getBinDelayArray();
 
 	void playStopButtonClicked();
 	void openButtonClicked();
 
-	// filePlaying
+	float getPanValue() { return panLR; };
+
+	// filePlaying variables
 	AudioFormatManager formatManager;
 	ScopedPointer<AudioFormatReaderSource> readerSource;
 	AudioTransportSource transportSource;
+
+	// GUI variable
+	bool bypass = false;
+	float delayTime = 100;
+
 private:
+	//fftSize
 	enum {
-		fftOrder = 9,
+		fftOrder = 8,
 		fftSize = 1 << fftOrder
 	};
+	
+	int sampleRate = 44100;
+	int fftSizeInt = 256;
+	int * fftSizePointer = nullptr;
 
 	// FFT variables.
 	ScopedPointer<dsp::FFT> FFTFUNCTIONP;
-	int numFFTOverlaps = 8;
-	overlapFFT *oFFT[2]; //channels
+	int numFFTOverlaps = 1 << 3;
+	OverlapFFT *oFFT[2]; //channels
 
-	// unused?
-	float* inputData[2048];
+
+	//int binDelayTimeResInSamps = fftSize / numFFTOverlaps;
 
 	// logging
 	ofstream myfile;
 	int n = 0;
 
 	// GUI controlled parameters
-	public: bool bypass = false;
-	private: float panLR = 0.5;
-	int delay = 1;
-	int delayArray[fftSize];
+	float panLR = 0.5;
+	float delayArray[40]; //numBins
 
     //==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FftbinDelayAudioProcessor)

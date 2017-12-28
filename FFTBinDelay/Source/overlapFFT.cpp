@@ -2,44 +2,43 @@
 #include <stdlib.h>
 #include <time.h> 
 
-overlapFFT::overlapFFT() {
-}
+//OverlapFFT::OverlapFFT() 
+//	: binDelay() {
+//}
 
-overlapFFT::overlapFFT(dsp::FFT *fftFunctionP, int numOverlaps, int fftSize)
-	: fft(fftSize),
-	binDelay(fftSize, numOverlaps)
+OverlapFFT::OverlapFFT(dsp::FFT *fftfunctionpointer, int * fftsize, int amountofoverlaps)
+	: binDelay(fftsize, amountofoverlaps, amountofoverlaps * (44100 / *fftsize) * delayLength)
 {
-	this->fftFunctionP = fftFunctionP;
-	this->numOverlaps = numOverlaps;
-	this->fftSize = fftSize;
+	this->fftFunctionP = fftfunctionpointer;
+	this->numOverlaps = amountofoverlaps;
+	this->fftSize = fftsize;
 
-	//srand(time(NULL));
-	//for (int i = 0; i < fftSize; i++) {
-	//	fftDelays[i] = new ForwardCircularDelay(numOverlaps * (44100 / fftSize) * 2, i * 2);
-	//}
+	timeData = (dsp::Complex<float> *) malloc(*fftsize * sizeof(dsp::Complex<float>));
+	memset(timeData, 0, sizeof(dsp::Complex<float>));
+	spectralDataIn = (dsp::Complex<float> *) malloc(*fftsize * sizeof(dsp::Complex<float>));
+	memset(spectralDataIn, 0, sizeof(dsp::Complex<float>));
+	spectralDataOut = (dsp::Complex<float> *) malloc(*fftsize * sizeof(dsp::Complex<float>));
+	memset(spectralDataOut, 0, sizeof(dsp::Complex<float>));
 
-	//replace all 512 values with bufferSize
-	//if (fftSize > 512) { //A
-		numFFTs = 1;
-	//}
-	//else if (512 >= fftSize) {			//B
-	//	numFFTs = 512 / fftSize;
-	//}	
+	// Initialize input & output memory
+	inputMemory = ForwardCircularDelay(20 * *fftSize, *fftSize, true, 1);
+	outputMemory = ForwardCircularDelay(20 * *fftSize, *fftSize, true, 1);
 
-	inputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize, 1, true);
-	DBG("InputMemory");
-	outputMemory = ForwardCircularDelay(5 * fftSize, 1 * fftSize, 1, true);
-	DBG("OutputMemory ");
-
-	hanningWindow.resize(fftSize);
+	hanningWindow.resize(*fftSize);
 	createHanningWindow();
 }
 
+OverlapFFT::~OverlapFFT() {
+	free(timeData);
+	free(spectralDataIn);
+	free(spectralDataOut);
+}
+
 // [1]
-void overlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int numSamples, int channel) {
-	const float* channelData = buffer.getReadPointer(channel, 0);
-	float* outBuffer = buffer.getWritePointer(channel, 0);
-	this->channel = channel;
+void OverlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int numSamples, int chan) {
+	const float* channelData = buffer.getReadPointer(chan, 0);
+	float* outBuffer = buffer.getWritePointer(chan, 0);
+	this->channel = chan;
 
 	for (int i = 0; i < numSamples; i++) {
 		// [1]
@@ -48,7 +47,7 @@ void overlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int
 
 		//count if enough samples are collected for the FFT calculations
 		inputForFFTCounter++; 
-		inputForFFTCounter %= fftSize;
+		inputForFFTCounter %= *fftSize;
 
 		// [23467]
 		if (inputForFFTCounter == 0) {
@@ -61,13 +60,13 @@ void overlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int
 }
 
 // [2,3,4]
-void overlapFFT::runThroughFFTs() { // 234
+void OverlapFFT::runThroughFFTs() { // 234
 	// run through all overlaps
 	for (int ovLap = 0; ovLap < numOverlaps; ovLap++) {
 
 		// calculate the indices for the current overlap
-		startIndex = ovLap * (fftSize / numOverlaps);
-		endIndex = startIndex + fftSize;
+		startIndex = ovLap * (*fftSize / numOverlaps);
+		endIndex = startIndex + *fftSize;
 
 		// fill the fft buffer
 		fillFFTBuffer(startIndex, endIndex); //[2]
@@ -77,29 +76,22 @@ void overlapFFT::runThroughFFTs() { // 234
 		pushFFTDataIntoOutputDelayBuffer(startIndex, endIndex); //[4]
 	}
 
-	//for (int i = 0; i < fftSize / 2; i++) {
-	//	fftDelays[i]->adjustPointers();
-	//}
 }
 
 // [2]
-void overlapFFT::fillFFTBuffer(int startIndex, int endIndex)
+void OverlapFFT::fillFFTBuffer(int startIndex, int endIndex)
 {
-	zeromem(fft.fftData, sizeof(fft.fftData));
-
-	// replace with a single function
-	for (int i = 0; i < fftSize; i++) {
-		fft.fftData[i] = inputMemory.readValue(i + startIndex);
+	for (int i = 0; i < *fftSize; i++) {
+		timeData[i]._Val[0] = inputMemory.readValue(i + startIndex);
 	}
 }
 
 // [3]
-void overlapFFT::applyFFT(int ovLap) {
+void OverlapFFT::applyFFT(int ovLap) {
 	//FFT
 	applyHannningWindowToFftBuffer();
 
-	for (int i = 0; i < fftSize; i++) {
-		timeData[i]._Val[0] = fft.fftData[i];
+	for (int i = 0; i < *fftSize; i++) {
 		timeData[i]._Val[1] = 0.0f;
 	}
 
@@ -107,10 +99,10 @@ void overlapFFT::applyFFT(int ovLap) {
 	// i.e. 256 positive cycloids and 256 negative cycloids.
 	fftFunctionP->perform(timeData, spectralDataIn, false);
 
-	for (int i = 0; i < fftSize; i++) {
+	for (int i = 0; i < *fftSize; i++) {
 		carToPol(&spectralDataIn[i]._Val[0], &spectralDataIn[i]._Val[1]);
-		//if (i < 0.5 * fftSize) spectralDataIn[i]._Val[0] *= 2.0f;
-		if (i == 0 || i > 0.5 * fftSize) spectralDataIn[i]._Val[0] = 0.0f; //set negative real values to 0.
+		//if (i < 0.5 * fftsize) spectralDataIn[i]._Val[0] *= 2.0f;
+		if (i == 0 || i > 0.5 * *fftSize) spectralDataIn[i]._Val[0] = 0.0f; //set negative real values to 0.
 		spectralDataOut[i] = spectralDataIn[i];
 	}
 
@@ -120,40 +112,38 @@ void overlapFFT::applyFFT(int ovLap) {
 	binDelay.pushMagnitudesIntoDelay(spectralDataIn);
 	binDelay.adjustPointers();
 
-	for (int i = fftSize / 2; i < fftSize; i++) {
+	for (int i = *fftSize / 2; i < *fftSize; i++) {
 		spectralDataOut[i]._Val[0] = 0.0f;
 	}
 
+
+	// CHANNEL SPECIFIC MODIFICATIONS
 	/*
-	switch (channel) {
+	switch (chan) {
 	case 0:
 	case 1:
 	}
 	*/
 
 	////IFFT
-	for (int i = 0; i < fftSize; i++) 
+	for (int i = 0; i < *fftSize; i++) 
 		polToCar(&spectralDataOut[i]._Val[0], &spectralDataOut[i]._Val[1]);
 
 	fftFunctionP->perform(spectralDataOut, timeData, true);
-
-	for (int i = 0; i < fftSize; i++) {
-		fft.fftData[i] = timeData[i].real();
-	}
 
 	//Apply hanningWindow
 	applyHannningWindowToFftBuffer();
 }
 
 // [3.1]
-void overlapFFT::applyHannningWindowToFftBuffer() {
-	for (int i = 0; i < fftSize; i++) { //run through each input amplitude value.
-		fft.fftData[i] *= hanningWindow[i];
+void OverlapFFT::applyHannningWindowToFftBuffer() {
+	for (int i = 0; i < *fftSize; i++) { //run through each input amplitude value.
+		timeData[i]._Val[0] *= hanningWindow[i];
 	}
 }
 
 // [3.2]
-void overlapFFT::carToPol(float* inReOutM, float* inImOutPhi) {
+void OverlapFFT::carToPol(float* inReOutM, float* inImOutPhi) {
 	float re = *inReOutM;
 	float im = *inImOutPhi;
 
@@ -163,7 +153,7 @@ void overlapFFT::carToPol(float* inReOutM, float* inImOutPhi) {
 }
 
 // [3.3]
-void overlapFFT::polToCar(float* inMOutRe, float* inPhiOutIm) {
+void OverlapFFT::polToCar(float* inMOutRe, float* inPhiOutIm) {
 	float mag = *inMOutRe;
 	float phi = *inPhiOutIm;
 
@@ -171,36 +161,33 @@ void overlapFFT::polToCar(float* inMOutRe, float* inPhiOutIm) {
 	*inPhiOutIm = mag * sin(phi);
 }
 
-// [3.4]
-void overlapFFT::applyHannningWindowToFftAudio() {
-	for (int i = 0; i < fftSize; i++) { //run through each magnitude value.
-		fft.fftData[i * 2] *= hanningWindow[i];
-	}
-}
-
 // [4]
-void overlapFFT::pushFFTDataIntoOutputDelayBuffer(int startIndex, int endIndex) {
-	for (int i = 0; i < fftSize; i++) {
-		outputMemory.addValue(fft.fftData[i], i + startIndex);
+void OverlapFFT::pushFFTDataIntoOutputDelayBuffer(int startIndex, int endIndex) {
+	for (int i = 0; i < *fftSize; i++) {
+		outputMemory.addValue(timeData[i]._Val[0], i + startIndex);
 	}
 }
 
 // [5]
-float overlapFFT::getOutputData() {
+float OverlapFFT::getOutputData() {
 	return outputMemory.readValue(inputForFFTCounter);
 }
 
 // [6, 7]
-void overlapFFT::adjustMemoryPointersAndClearOutputMemory() {
-	outputMemory.clearBufferData(-1 * fftSize, 0);
+void OverlapFFT::adjustMemoryPointersAndClearOutputMemory() {
+	outputMemory.clearBufferData(-3 * *fftSize, -2 * *fftSize);
 
-	inputMemory.adjustPointers(512);
-	outputMemory.adjustPointers(512);
+	inputMemory.adjustPointers(*fftSize);
+	outputMemory.adjustPointers(*fftSize);
+}
+
+void OverlapFFT::setBinDelayWithNewSampleRate(int sampleRate) {
+	binDelay.newBufferSize( numOverlaps * (sampleRate / *fftSize) * delayLength);
 }
 
 // Initialize the hanning window
-void overlapFFT::createHanningWindow() {
-	for (int i = 0; i < fftSize; i++) {
-		hanningWindow[i] = sin((float(i) / fftSize) * float_Pi);
+void OverlapFFT::createHanningWindow() {
+	for (int i = 0; i < *fftSize; i++) {
+		hanningWindow[i] = sin((float(i) / *fftSize) * float_Pi);
 	}
 }

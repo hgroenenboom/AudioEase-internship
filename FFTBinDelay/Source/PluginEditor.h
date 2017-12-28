@@ -1,18 +1,8 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-    It contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
 
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
-#include "singleFFT.h"
 #include "MultiSlider.h"
 
 //==============================================================================
@@ -33,14 +23,16 @@ public:
 
 	// overrided abstract functions
 	void changeListenerCallback(ChangeBroadcaster* source) override;
-	void buttonClicked(Button* button) override;
 	void sliderValueChanged(Slider* slider) override;
 
 	// button functions
 	void refreshButtons();
+	void buttonClicked(Button* button) override;
 	void playButtonClicked();
 	void openButtonClicked();
 	void bypassButtonClicked();
+	void rangeButtonClicked();
+	void refreshRangeButton();
 
 	// slider functions
 	void newFeedbackSliderValue();
@@ -55,7 +47,10 @@ private:
 	TextButton openButton;
 	TextButton playStopButton;
 	TextButton bypassButton;
-	TextButton rangeButton;
+
+	TextButton delayRangeButton;
+	int rangeHigh = 1000;
+	int rangeLow = 100;
 
 	Slider feedbackSlider;
 

@@ -1,40 +1,36 @@
-/*
-  ==============================================================================
-
-    binDelay.cpp
-    Created: 19 Dec 2017 10:50:18am
-    Author:  Harold
-
-  ==============================================================================
-*/
 
 #include "binDelay.h"
 
-BinDelay::BinDelay(int fftSize, int numOverlaps)
-			: fftSize(fftSize) {
+BinDelay::BinDelay(int* fftSize, int numOverlaps, int sizeInBlocks)
+			: fftSize(fftSize)
+{
 	createIndexArray();
 
 	for (int i = 0; i < nBins; i++) {
-		delays[i] = new ForwardCircularDelay(numOverlaps * (44100 / fftSize) * 4, i * 16, false, numBinsArray[i]);
+		delays[i] = new ForwardCircularDelay(sizeInBlocks, i * 2, false, numBinsArray[i]);
+	}
+
+	if (*fftSize <= 32) {
+		dubLinInc = linInc;
 	}
 }
 
 void BinDelay::createIndexArray() {
 	for (int i = 0; i < nBins; i++) {
-		if (i < linR)
+		if (i < linInc)
 			indexArray[i] = i;
-		if (i >= linR & i < linDR)
-			indexArray[i] = linR + (i - linR) * 2;
-		if (i >= linDR)
-			indexArray[i] = (linDR - linR) * 2 + linR //add start value + 15
-				+ (i - linDR) * 2 //add two for every index + 0 tot 40
-				+ pow((i - linDR) / (float) (nBins - linDR) , 3.0f) // exponential increase from 0-1
-				* (fftSize * 0.4); // 
+		if (i >= linInc && i < dubLinInc)
+			indexArray[i] = linInc + (i - linInc) * 2;
+		if (i >= dubLinInc)
+			indexArray[i] = (int)(dubLinInc - linInc) * 2 + linInc //add start value + 15
+				+ (i - dubLinInc) * 2 //add two for every index + 0 tot 40
+				+ pow((i - dubLinInc) / (float) (nBins - dubLinInc) , 7.0f) // exponential increase from 0-1
+				* (*fftSize / 2 - indexArray[dubLinInc] - (nBins - dubLinInc) * 2); // 
 	}
 
 	for (int i = 0; i < nBins; i++) {
 		if (i == nBins - 1) {
-			numBinsArray[i] = fftSize / 2 - indexArray[i];
+			numBinsArray[i] = *fftSize / 2 - indexArray[i];
 		}
 		else {
 			numBinsArray[i] = indexArray[i + 1] - indexArray[i];
@@ -65,8 +61,12 @@ void BinDelay::getOutputMagnitudes(dsp::Complex<float> * writeFFT) {
 	}
 }
 
-void BinDelay::setDelayTime(int * delayArray) {
+void BinDelay::newBufferSize(int sizeinblocks) {
 	for (int i = 0; i < nBins; i++) {
-		delays[i]->setDelayTime(delayArray[i]);
+		delays[i]->resizeBuffer(sizeinblocks);
 	}
+}
+
+void BinDelay::setDelayTime(int index, int value) {
+	delays[index]->setDelayTime(value);
 }

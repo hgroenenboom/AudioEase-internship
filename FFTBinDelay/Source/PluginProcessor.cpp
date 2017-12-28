@@ -16,6 +16,7 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 				)
 #endif
 {
+	fftSizePointer = &fftSizeInt;
 	FFTFUNCTIONP = new dsp::FFT(fftOrder);
 
 	formatManager.registerBasicFormats(); 
@@ -26,8 +27,9 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 	}
 
 	for (int channel = 0; channel < 2; channel++) {
-		oFFT[channel] = new overlapFFT(FFTFUNCTIONP, numFFTOverlaps, fftSize);
+		oFFT[channel] = new OverlapFFT(FFTFUNCTIONP, fftSizePointer, numFFTOverlaps);
 	}
+
 }
 
 
@@ -103,6 +105,13 @@ void FftbinDelayAudioProcessor::changeProgramName (int index, const String& newN
 void FftbinDelayAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
 	transportSource.prepareToPlay(samplesPerBlock, sampleRate);
+	if (sampleRate != sampleRate) {
+		this->sampleRate = sampleRate;
+	
+		for (int c = 0; c < 2; c++) {
+			oFFT[c]->setBinDelayWithNewSampleRate(sampleRate);
+		}
+	}
 }
 
 void FftbinDelayAudioProcessor::releaseResources()
@@ -164,12 +173,12 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 			oFFT[channel]->pushDataIntoMemoryAndPerformFFTs(buffer, buffer.getNumSamples(), channel);
 
 			// LOG TO FILE
-			if (panLR != 0.5) myfile << "panning: " << panLR << "\n";
+			/*if (panLR != 0.5) myfile << "panning: " << panLR << "\n";
 			if (buffer.getNumSamples() != 512) {
 				myfile << "current callbackSize: " << buffer.getNumSamples() << "\n";
 				myfile << "current callback: " << n++ << "\n";
 			}
-			else { n++; }
+			else { n++; }*/
 		}
 	}
 
@@ -208,14 +217,25 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new FftbinDelayAudioProcessor();
 }
 
-void FftbinDelayAudioProcessor::setDelayValue(int delay) {
-	this->delay = delay;
+void FftbinDelayAudioProcessor::setFeedbackValue(float feedback) {
 	for (int c = 0; c < 2; c++) {
-		for (int i = 0; i < 30; i++) {
-			delayArray[i] = delay * + i * delay;
-		}
-		oFFT[c]->binDelay.setDelayTime(delayArray);
+		oFFT[c]->binDelay.setFeedback(feedback);
 	}
+}
+
+float FftbinDelayAudioProcessor::getFeedbackValue() {
+	return oFFT[0]->binDelay.getFeedback();
+}
+
+void FftbinDelayAudioProcessor::setBinDelayTime(int index, float value) {
+	delayArray[index] = value;
+	for (int c = 0; c < 2; c++) {
+		oFFT[c]->binDelay.setDelayTime(index, (1 - value) * delayTime);
+	}
+}
+
+float* FftbinDelayAudioProcessor::getBinDelayArray() {
+	return delayArray;
 }
 
 void FftbinDelayAudioProcessor::playStopButtonClicked() {

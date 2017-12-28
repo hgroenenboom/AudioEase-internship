@@ -6,14 +6,14 @@
 #include <vector>
 #include "../JuceLibraryCode/JuceHeader.h"
 
-#include "singleFFT.h"
 #include "blockDelay.h"
 #include "binDelay.h"
 
-class overlapFFT {
+class OverlapFFT {
 	public:
-		overlapFFT();
-		overlapFFT(dsp::FFT *fftFunctionP, int numOverlaps = 2, int fftSize = 512); //the used fft function and the amount of windows.
+		//OverlapFFT();
+		OverlapFFT(dsp::FFT *fftFunctionP, int * fftSize, int numOverlaps); //the used fft function and the amount of windows.
+		~OverlapFFT();
 
 		void setPanData(float* panData) { pan = panData; }
 
@@ -27,7 +27,6 @@ class overlapFFT {
 		void applyHannningWindowToFftBuffer(); // [3.1]
 		void carToPol(float* inReOutM, float* inImOutPhi); // [3.2]
 		void polToCar(float* inMOutRe, float* inPhiOutIm); // [3.3]
-		void applyHannningWindowToFftAudio(); // [3.4]
 		void pushFFTDataIntoOutputDelayBuffer(int startIndex, int endIndex); // [4]
 		
 		// [5]
@@ -35,32 +34,34 @@ class overlapFFT {
 		// [6, 7]
 		void adjustMemoryPointersAndClearOutputMemory(); 
 
+		void setBinDelayWithNewSampleRate(int sampleRate);
 		void createHanningWindow();
 
-		dsp::Complex<float> timeData[512];
-		dsp::Complex<float> spectralDataIn[512];
-		dsp::Complex<float> spectralDataOut[512];
-
-		//ForwardCircularDelay* fftDelays[512];
 	private:
+		int numOverlaps = 2,
+			//numFFTs = 2,
+			startIndex,
+			endIndex,
+			channel,
+			delayLength = 10;
+
+
+		// Complexe buffers voor de fft berekeningen
+		dsp::Complex<float> * timeData;
+		dsp::Complex<float> * spectralDataIn;
+		dsp::Complex<float> * spectralDataOut;
+
+		// input en ouput memories
 		ForwardCircularDelay outputMemory;
 		ForwardCircularDelay inputMemory;
 		int inputForFFTCounter = 0;
 
-		int fftSize;
+		// pointer naar de fftSize
+		int * fftSize;
 
 		std::vector<float> hanningWindow;
 
-		int window = 0,
-			numOverlaps = 2,
-			numFFTs = 2,
-			startIndex,
-			endIndex,
-			bufferSize = 512,
-			channel;
-
-		FFTProcessor fft;
-
+		// DE FFT PERFORM FUNCTIE ACCEPTEERT ALLEEN FLOATS
 		dsp::FFT *fftFunctionP;
 
 		float* pan;

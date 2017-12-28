@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="OxeLyD" name="FFTBinDelay" displaySplashScreen="1" reportAppUsage="1"
-              splashScreenColour="Dark" projectType="audioplug" version="2.5.1"
+              splashScreenColour="Dark" projectType="audioplug" version="2.6"
               bundleIdentifier="com.yourcompany.FFTBinDelay" includeBinaryInAppConfig="1"
               cppLanguageStandard="11" companyCopyright="GreenSounds" buildVST="1"
               buildVST3="0" buildAU="1" buildAUv3="0" buildRTAS="0" buildAAX="0"
               buildStandalone="1" enableIAA="0" pluginName="FFTBinDelay" pluginDesc="FFTBinDelay"
-              pluginManufacturer="yourcompany" pluginManufacturerCode="Manu"
+              pluginManufacturer="GreenSounds" pluginManufacturerCode="Manu"
               pluginCode="Oxel" pluginChannelConfigs="" pluginIsSynth="0" pluginWantsMidiIn="0"
               pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0" pluginEditorRequiresKeys="0"
               pluginAUExportPrefix="FFTBinDelayAU" pluginRTASCategory="" aaxIdentifier="com.yourcompany.FFTBinDelay"
@@ -23,8 +23,6 @@
       <FILE id="yvPaU7" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="cfHx0X" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
-      <FILE id="E5fujS" name="singleFFT.cpp" compile="1" resource="0" file="Source/singleFFT.cpp"/>
-      <FILE id="vFPGnP" name="singleFFT.h" compile="0" resource="0" file="Source/singleFFT.h"/>
       <FILE id="S3Akv5" name="overlapFFT.cpp" compile="1" resource="0" file="Source/overlapFFT.cpp"/>
       <FILE id="ZJ2AaA" name="overlapFFT.h" compile="0" resource="0" file="Source/overlapFFT.h"/>
       <FILE id="sdcfeY" name="binDelay.cpp" compile="1" resource="0" file="Source/binDelay.cpp"/>

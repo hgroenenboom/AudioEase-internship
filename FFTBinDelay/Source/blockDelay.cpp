@@ -3,17 +3,17 @@
 //BlockDelay::BlockDelay() {}
 
 ForwardCircularDelay::ForwardCircularDelay(int delaySizeInBlocks, int delayInBlocks, bool delayTimeIsBufferLength, int valuesPerBlock)
-	: memSize(delaySizeInBlocks * valuesPerBlock),
+	: MEMSIZE(delaySizeInBlocks * valuesPerBlock),
 	delayTimeIsBufferLength(delayTimeIsBufferLength),
 	valuesPerBlock(valuesPerBlock),
 	delayInBlocks(delayInBlocks)
 {
 	//initialize buffersize
-	delayBuffer.resize(memSize); 
+	delayBuffer = (double *) malloc(sizeof(double) * MEMSIZE);
 	//zerofill buffer
-	fill(delayBuffer.begin(), delayBuffer.end(), 0); 
+	memset(delayBuffer, 0.0, MEMSIZE * sizeof(double));
+	DBG("allocated buffer: ");
 	//Initialize delay parameters:
-	DBG("Delayin blocks: " << delayInBlocks);
 	setDelayTime(delayInBlocks);
 
 	//Initialize delay pointers:
@@ -22,6 +22,10 @@ ForwardCircularDelay::ForwardCircularDelay(int delaySizeInBlocks, int delayInBlo
 	readPointer = (-1 * delayInValues + delayModulo) % delayModulo;
 }
 
+ForwardCircularDelay::~ForwardCircularDelay() {
+	//free(delayBuffer);
+	DBG("freeing the delayBuffer causes errors");
+}
 
 
 // read a value offsetted from the read pointer. default reads the current delay sample
@@ -53,24 +57,35 @@ void ForwardCircularDelay::setDelayTime(int delayInBlocks) {
 	delayInValues = delayInBlocks * valuesPerBlock;
 
 	if (delayTimeIsBufferLength) {
-		delayModulo = memSize;
+		delayModulo = MEMSIZE;
 	}
 	else if(delayInBlocks <= 0) {
 		delayInBlocks = 1;
 		DBG("Delay <= 0 !!!");
-		feedbackControl = 0.0f;
+		//feedbackControl = 0.0f;
 		delayInValues = delayInBlocks * valuesPerBlock;
-		delayModulo = memSize;
+		delayModulo = MEMSIZE;
 	}
-	else if (delayInValues > memSize) {
+	else if (delayInValues > MEMSIZE) {
 		DBG("delay size out of range. ");
-		delayModulo = memSize;
+		delayModulo = MEMSIZE;
 	} else {
 		//DBG("New delay value. ");
 		delayModulo = delayInValues;
 	} 
 }
 
+
+void ForwardCircularDelay::resizeBuffer(int sizeinblocks) {
+	free(delayBuffer);
+	
+	int memSize = sizeinblocks;
+	//initialize buffersize
+	delayBuffer = (double *)malloc(sizeof(double) * memSize);
+	//zerofill buffer
+	memset(delayBuffer, 0.0, memSize * sizeof(double));
+	//DBG("allocated buffer: ");
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////
