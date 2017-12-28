@@ -17,18 +17,17 @@ public:
 	void reactToMouseValues(const MouseEvent& event);
 
 	void setBinDelayTimeValue(int index, float value);
-	float* getSliderValues();
+	const float* getSliderValues() const;
 
-	void refreshBinDelayTimeValues();
-	void refreshDelaySliderValues(float* newDelays);
+	void refreshDataValues();
+	void refreshGUIValues(/* const array<float, numSliders >& newDelays */ const float* newDelays);
 private:
 
 	FftbinDelayAudioProcessor& processor;
 	bool mouseIsInsideComponent;
 
 	// amount of sliders, value is changeble. Needs to be changed in binDelay too.
-	static constexpr int nSliders = 20;
 
-	float delaySliderValues[nSliders];
+	float delaySliderValues[MainVar::numBins];
 	int newPos;
 };

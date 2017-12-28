@@ -29,6 +29,7 @@
       <FILE id="PTO7mx" name="binDelay.h" compile="0" resource="0" file="Source/binDelay.h"/>
       <FILE id="FHlgo5" name="MultiSlider.cpp" compile="1" resource="0" file="Source/MultiSlider.cpp"/>
       <FILE id="vWKV7S" name="MultiSlider.h" compile="0" resource="0" file="Source/MultiSlider.h"/>
+      <FILE id="x4IAqz" name="MainVar.h" compile="0" resource="0" file="Source/MainVar.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>

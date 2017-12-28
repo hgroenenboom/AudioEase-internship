@@ -1,22 +1,21 @@
 
 #include "binDelay.h"
 
-BinDelay::BinDelay(int* fftSize, int numOverlaps, int sizeInBlocks)
-			: fftSize(fftSize)
+BinDelay::BinDelay(int sizeInBlocks)
 {
 	createIndexArray();
 
-	for (int i = 0; i < nBins; i++) {
-		delays[i] = new ForwardCircularDelay(sizeInBlocks, i * 2, false, numBinsArray[i]);
+	for (int i = 0; i < MainVar::numBins; i++) {
+		delays[i] = new ForwardCircularDelay(sizeInBlocks * 2, i * 5, false, numBinsArray[i] * 2);
 	}
 
-	if (*fftSize <= 32) {
+	if (MainVar::fftSize <= 32) {
 		dubLinInc = linInc;
 	}
 }
 
 void BinDelay::createIndexArray() {
-	for (int i = 0; i < nBins; i++) {
+	for (int i = 0; i < MainVar::numBins; i++) {
 		if (i < linInc)
 			indexArray[i] = i;
 		if (i >= linInc && i < dubLinInc)
@@ -24,13 +23,13 @@ void BinDelay::createIndexArray() {
 		if (i >= dubLinInc)
 			indexArray[i] = (int)(dubLinInc - linInc) * 2 + linInc //add start value + 15
 				+ (i - dubLinInc) * 2 //add two for every index + 0 tot 40
-				+ pow((i - dubLinInc) / (float) (nBins - dubLinInc) , 7.0f) // exponential increase from 0-1
-				* (*fftSize / 2 - indexArray[dubLinInc] - (nBins - dubLinInc) * 2); // 
+				+ pow((i - dubLinInc) / (float) (MainVar::numBins - dubLinInc) , 7.0f) // exponential increase from 0-1
+				* (MainVar::fftSize / 2 - indexArray[dubLinInc] - (MainVar::numBins - dubLinInc) * 2); // 
 	}
 
-	for (int i = 0; i < nBins; i++) {
-		if (i == nBins - 1) {
-			numBinsArray[i] = *fftSize / 2 - indexArray[i];
+	for (int i = 0; i < MainVar::numBins; i++) {
+		if (i == MainVar::numBins - 1) {
+			numBinsArray[i] = MainVar::fftSize / 2 - indexArray[i];
 		}
 		else {
 			numBinsArray[i] = indexArray[i + 1] - indexArray[i];
@@ -38,35 +37,42 @@ void BinDelay::createIndexArray() {
 	}
 }
 
-void BinDelay::pushMagnitudesIntoDelay(dsp::Complex<float>* inputFFT) {
-	for (int i = 0; i < nBins; i++) {
+void BinDelay::pushIntoBinDelay(const dsp::Complex<float>* inputFFT) {
+	for (int i = 0; i < MainVar::numBins; i++) {
 		for (int b = 0; b < numBinsArray[i]; b++) { //telt door de fftbins heen
-			delays[i]->addValue(inputFFT[indexArray[i] + b]._Val[0], b);
+			delays[i]->addValue(inputFFT[indexArray[i] + b]._Val[0], b * 2);
+			if (phaseInDelay) {
+				delays[i]->feedBack(b * 2 + 1, 0.0); // SET FEEDBACK
+				delays[i]->addValue(inputFFT[indexArray[i] + b]._Val[1], b * 2 + 1);
+			}
 		}
 	}
 }
 
 void BinDelay::adjustPointers() {
-	for (int i = 0; i < nBins; i++) {
+	for (int i = 0; i < MainVar::numBins; i++) {
 		delays[i]->adjustPointers();
 	}
 }
 
-void BinDelay::getOutputMagnitudes(dsp::Complex<float> * writeFFT) {
-	for (int i = 0; i < nBins; i++) {
+void BinDelay::getOutputFromBinDelay(dsp::Complex<float> * writeFFT) {
+	for (int i = 0; i < MainVar::numBins; i++) {
 		for (int b = 0; b < numBinsArray[i]; b++) { //telt door de fftbins heen
-			writeFFT[indexArray[i] + b]._Val[0] = delays[i]->readValue(b);
-			delays[i]->feedBack(b, feedback); // SET FEEDBACK
+			writeFFT[indexArray[i] + b]._Val[0] = delays[i]->readValue(b * 2);
+			if (phaseInDelay) {
+				writeFFT[indexArray[i] + b]._Val[1] = delays[i]->readValue(b * 2 + 1);
+			}
+			delays[i]->feedBack(b * 2, feedback); // SET FEEDBACK
 		}
 	}
 }
 
 void BinDelay::newBufferSize(int sizeinblocks) {
-	for (int i = 0; i < nBins; i++) {
-		delays[i]->resizeBuffer(sizeinblocks);
+	for (int i = 0; i < MainVar::numBins; i++) {
+		delays[i]->resizeBuffer(sizeinblocks * 2);
 	}
 }
 
-void BinDelay::setDelayTime(int index, int value) {
+void BinDelay::setDelayTime(int index, float value) {
 	delays[index]->setDelayTime(value);
 }

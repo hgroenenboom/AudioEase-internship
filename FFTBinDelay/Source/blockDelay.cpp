@@ -2,16 +2,16 @@
 
 //BlockDelay::BlockDelay() {}
 
-ForwardCircularDelay::ForwardCircularDelay(int delaySizeInBlocks, int delayInBlocks, bool delayTimeIsBufferLength, int valuesPerBlock)
-	: MEMSIZE(delaySizeInBlocks * valuesPerBlock),
+ForwardCircularDelay::ForwardCircularDelay(int delaySizeInBlocks, int delayinblocks, bool delayTimeIsBufferLength, int valuesperblock)
+	: MEMSIZE(delaySizeInBlocks * valuesperblock),
 	delayTimeIsBufferLength(delayTimeIsBufferLength),
-	valuesPerBlock(valuesPerBlock),
-	delayInBlocks(delayInBlocks)
+	valuesPerBlock(valuesperblock),
+	delayInBlocks(delayinblocks)
 {
 	//initialize buffersize
-	delayBuffer = (double *) malloc(sizeof(double) * MEMSIZE);
+	delayBuffer = (double *) malloc(sizeof(double) * (MEMSIZE + valuesPerBlock) );
 	//zerofill buffer
-	memset(delayBuffer, 0.0, MEMSIZE * sizeof(double));
+	memset(delayBuffer, 0.0, (MEMSIZE + valuesPerBlock) * sizeof(double));
 	DBG("allocated buffer: ");
 	//Initialize delay parameters:
 	setDelayTime(delayInBlocks);
@@ -23,13 +23,13 @@ ForwardCircularDelay::ForwardCircularDelay(int delaySizeInBlocks, int delayInBlo
 }
 
 ForwardCircularDelay::~ForwardCircularDelay() {
-	//free(delayBuffer);
+	free(delayBuffer);
 	DBG("freeing the delayBuffer causes errors");
 }
 
 
 // read a value offsetted from the read pointer. default reads the current delay sample
-float ForwardCircularDelay::readValue(int index) {
+double ForwardCircularDelay::readValue(int index) {
 	return delayBuffer[(readPointer + index + delayModulo) % delayModulo];
 };
 
@@ -51,25 +51,28 @@ void ForwardCircularDelay::adjustPointers(int numBlocks) {
 	readPointer = (currentPosition - delayInValues + delayModulo) % delayModulo;
 }
 
-void ForwardCircularDelay::setDelayTime(int delayInBlocks) {
-	//DBG("New delayTime in blocks: " << delayInBlocks);
-	this->delayInBlocks = delayInBlocks;
-	delayInValues = delayInBlocks * valuesPerBlock;
+void ForwardCircularDelay::setDelayTime(float delayinblocks) {
+	//DBG("New delayTime in blocks: " << delayinblocks);
+	this->delayInBlocks = (int)delayinblocks;
+	delayInValues = this->delayInBlocks * valuesPerBlock;
 
 	if (delayTimeIsBufferLength) {
-		delayModulo = MEMSIZE;
+		delayModulo = MEMSIZE + valuesPerBlock;
 	}
-	else if(delayInBlocks <= 0) {
-		delayInBlocks = 1;
+	else if(this->delayInBlocks <= 0) {
+		this->delayInBlocks = 1;
 		DBG("Delay <= 0 !!!");
-		//feedbackControl = 0.0f;
-		delayInValues = delayInBlocks * valuesPerBlock;
-		delayModulo = MEMSIZE;
+		feedbackControl = 0.0f;
+		delayInValues = this->delayInBlocks * valuesPerBlock;
+		delayModulo = MEMSIZE + valuesPerBlock;
 	}
 	else if (delayInValues > MEMSIZE) {
 		DBG("delay size out of range. ");
-		delayModulo = MEMSIZE;
+		delayModulo = MEMSIZE + valuesPerBlock;
 	} else {
+		if (feedbackControl == 0.0f) {
+			feedbackControl = 1.0f;
+		}
 		//DBG("New delay value. ");
 		delayModulo = delayInValues;
 	} 

@@ -27,12 +27,14 @@ public:
 
 	// button functions
 	void refreshButtons();
+	void refreshButton(TextButton& button, bool condition);
+
 	void buttonClicked(Button* button) override;
 	void playButtonClicked();
 	void openButtonClicked();
 	void bypassButtonClicked();
 	void rangeButtonClicked();
-	void refreshRangeButton();
+	void phaseInDelayButtonClicked();
 
 	// slider functions
 	void newFeedbackSliderValue();
@@ -43,17 +45,14 @@ private:
 	// access the processor object that created it.
 	FftbinDelayAudioProcessor& processor;
 
-	int nButtons = 4;
 	TextButton openButton;
 	TextButton playStopButton;
 	TextButton bypassButton;
-
 	TextButton delayRangeButton;
-	int rangeHigh = 1000;
-	int rangeLow = 100;
+	TextButton phaseDelayButton;
+	int nButtons = 5;
 
 	Slider feedbackSlider;
-
 	MultiSlider mSlider;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FftbinDelayAudioProcessorEditor)

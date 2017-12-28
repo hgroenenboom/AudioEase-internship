@@ -5,6 +5,7 @@
 #include <vector>
 #include <math.h>
 
+#include "MainVar.h"
 #include "blockDelay.h"
 
 #include "../JuceLibraryCode/JuceHeader.h"
@@ -13,32 +14,30 @@ using namespace std;
 
 class BinDelay {
 	public:
-		BinDelay::BinDelay(int* fftSize, int numOverlaps, int sizeInBlocks);
+		BinDelay::BinDelay(int sizeInBlocks);
 		void createIndexArray();
 
-		void pushMagnitudesIntoDelay(dsp::Complex<float>* inputFFT);
+		void pushIntoBinDelay(const dsp::Complex<float>* inputFFT);
 		void adjustPointers();
-		void getOutputMagnitudes(dsp::Complex<float> * writeFFT);
+		void getOutputFromBinDelay(dsp::Complex<float> * writeFFT);
 
 		void newBufferSize(int sizeinblocks);
 
-		void setDelayTime(int index, int value);
+		void setDelayTime(int index, float value);
 		void setFeedback(float feedbck) { this->feedback = feedbck; }
 		float getFeedback() { return feedback; }
 
+		bool phaseInDelay = true;
 	private:
-		ofstream myfile;
+		//ofstream myfile;
 
 		// indexing parameters
-		static constexpr int nBins = 20; // amount of bin, value is changeble. Needs to be changed in multiSlider too.
-		int linInc = nBins / 4;
-		int dubLinInc = nBins / 2;
+		int linInc = MainVar::numBins / 4;
+		int dubLinInc = MainVar::numBins / 2;
 
-		ForwardCircularDelay* delays[nBins];
-		int indexArray[nBins];
-		int numBinsArray[nBins];
+		ForwardCircularDelay* delays[MainVar::numBins];
+		int indexArray[MainVar::numBins];
+		int numBinsArray[MainVar::numBins];
 
 		float feedback = 0.0;
-
-		int * fftSize;
 };

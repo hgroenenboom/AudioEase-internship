@@ -47,6 +47,10 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	delayRangeButton.addListener(this);
 	delayRangeButton.setButtonText("delayTime * 100");
 
+	addAndMakeVisible(&phaseDelayButton);
+	phaseDelayButton.addListener(this);
+	phaseDelayButton.setButtonText("Delay phase");
+
 	refreshButtons();
 	refreshSliders();
 
@@ -67,7 +71,7 @@ void FftbinDelayAudioProcessorEditor::paint (Graphics& g)
 
     g.setColour (Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("2.6.1 Stereo Chaotic Delay's. Files cleaned and working on the TODO list", getLocalBounds(), Justification::bottomRight, 1);
+    g.drawFittedText ("2.6.2 Working on the TODO list. Next: DryWet slider", getLocalBounds(), Justification::bottomRight, 1);
 }
 
 void FftbinDelayAudioProcessorEditor::resized()
@@ -79,6 +83,7 @@ void FftbinDelayAudioProcessorEditor::resized()
 	playStopButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 	bypassButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 	delayRangeButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+	phaseDelayButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 
 	auto midHeader = space.removeFromTop(50);
 	feedbackSlider.setBounds(midHeader.removeFromTop( midHeader.getHeight()) );
@@ -132,15 +137,16 @@ void FftbinDelayAudioProcessorEditor::refreshButtons() {
 		bypassButton.setColour(TextButton::buttonColourId, Colours::black);
 	}
 
-	refreshRangeButton();
+	refreshButton(delayRangeButton, processor.delayTime == MainVar::delRangeLong);
+	refreshButton(phaseDelayButton, processor.oFFT[0]->binDelay.phaseInDelay);
 }
 
-void FftbinDelayAudioProcessorEditor::refreshRangeButton() {
-	if (processor.delayTime == rangeHigh) {
-		delayRangeButton.setColour(TextButton::buttonColourId, Colours::green);
+void FftbinDelayAudioProcessorEditor::refreshButton(TextButton& button, bool condition) {
+	if (condition) {
+		button.setColour(TextButton::buttonColourId, Colours::green);
 	}
 	else {
-		delayRangeButton.setColour(TextButton::buttonColourId, Colours::black);
+		button.setColour(TextButton::buttonColourId, Colours::black);
 	}
 }
 
@@ -158,6 +164,9 @@ void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
 	}
 	if (button == &delayRangeButton) {
 		rangeButtonClicked();
+	}
+	if (button == &phaseDelayButton) {
+		phaseInDelayButtonClicked();
 	}
 }
 
@@ -183,20 +192,37 @@ void FftbinDelayAudioProcessorEditor::bypassButtonClicked() {
 };
 
 void FftbinDelayAudioProcessorEditor::rangeButtonClicked() {
-	if (processor.delayTime == rangeHigh) {
+	if (processor.delayTime == MainVar::delRangeLong) {
 		delayRangeButton.setColour(TextButton::buttonColourId, Colours::black);
-		processor.delayTime = rangeLow;
+		processor.delayTime = MainVar::delRangeShort;
 		delayRangeButton.setButtonText("Short");
 		delayRangeButton.setColour(TextButton::textColourOffId, Colours::lightblue);
 	}
 	else {
 		delayRangeButton.setColour(TextButton::buttonColourId, Colours::green);
-		processor.delayTime = rangeHigh;
+		processor.delayTime = MainVar::delRangeLong;
 		delayRangeButton.setButtonText("Long");
 		delayRangeButton.setColour(TextButton::textColourOffId, Colours::white);
 	}
 
-	mSlider.refreshBinDelayTimeValues();
+	mSlider.refreshDataValues();
+}
+
+void FftbinDelayAudioProcessorEditor::phaseInDelayButtonClicked() {
+	if (processor.oFFT[0]->binDelay.phaseInDelay) {
+		phaseDelayButton.setColour(TextButton::buttonColourId, Colours::black);
+		processor.oFFT[0]->binDelay.phaseInDelay = false;
+		processor.oFFT[1]->binDelay.phaseInDelay = false;
+		phaseDelayButton.setButtonText("Phase is not in delay");
+		phaseDelayButton.setColour(TextButton::textColourOffId, Colours::lightblue);
+	}
+	else {
+		phaseDelayButton.setColour(TextButton::buttonColourId, Colours::green);
+		processor.oFFT[0]->binDelay.phaseInDelay = true;
+		processor.oFFT[1]->binDelay.phaseInDelay = true;
+		phaseDelayButton.setButtonText("Phase is in delay");
+		phaseDelayButton.setColour(TextButton::textColourOffId, Colours::white);
+	}
 }
 
 void FftbinDelayAudioProcessorEditor::newFeedbackSliderValue() {
@@ -205,6 +231,6 @@ void FftbinDelayAudioProcessorEditor::newFeedbackSliderValue() {
 
 void FftbinDelayAudioProcessorEditor::refreshSliders() {
 	feedbackSlider.setValue( processor.getFeedbackValue());
-	mSlider.refreshDelaySliderValues(processor.getBinDelayArray());
+	mSlider.refreshGUIValues(processor.getBinDelayArray());
 };
 

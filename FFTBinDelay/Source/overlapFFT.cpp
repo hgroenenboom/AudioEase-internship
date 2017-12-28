@@ -6,25 +6,25 @@
 //	: binDelay() {
 //}
 
-OverlapFFT::OverlapFFT(dsp::FFT *fftfunctionpointer, int * fftsize, int amountofoverlaps)
-	: binDelay(fftsize, amountofoverlaps, amountofoverlaps * (44100 / *fftsize) * delayLength)
+OverlapFFT::OverlapFFT(dsp::FFT *fftfunctionpointer)
+	: binDelay(MainVar::numOverlaps * (44100 / MainVar::fftSize) * MainVar::maxDelInSec),
+	inputMemory(30 * MainVar::fftSize, MainVar::fftSize, true, 1),
+	outputMemory(30 * MainVar::fftSize, MainVar::fftSize, true, 1)
 {
 	this->fftFunctionP = fftfunctionpointer;
-	this->numOverlaps = amountofoverlaps;
-	this->fftSize = fftsize;
 
-	timeData = (dsp::Complex<float> *) malloc(*fftsize * sizeof(dsp::Complex<float>));
+	timeData = (dsp::Complex<float> *) malloc(MainVar::fftSize * sizeof(dsp::Complex<float>));
 	memset(timeData, 0, sizeof(dsp::Complex<float>));
-	spectralDataIn = (dsp::Complex<float> *) malloc(*fftsize * sizeof(dsp::Complex<float>));
+	spectralDataIn = (dsp::Complex<float> *) malloc(MainVar::fftSize * sizeof(dsp::Complex<float>));
 	memset(spectralDataIn, 0, sizeof(dsp::Complex<float>));
-	spectralDataOut = (dsp::Complex<float> *) malloc(*fftsize * sizeof(dsp::Complex<float>));
+	spectralDataOut = (dsp::Complex<float> *) malloc(MainVar::fftSize * sizeof(dsp::Complex<float>));
 	memset(spectralDataOut, 0, sizeof(dsp::Complex<float>));
 
 	// Initialize input & output memory
-	inputMemory = ForwardCircularDelay(20 * *fftSize, *fftSize, true, 1);
-	outputMemory = ForwardCircularDelay(20 * *fftSize, *fftSize, true, 1);
+	//inputMemory = ForwardCircularDelay(20 * MainVar::fftSize, MainVar::fftSize, true, 1);
+	//outputMemory = ForwardCircularDelay(20 * MainVar::fftSize, MainVar::fftSize, true, 1);
 
-	hanningWindow.resize(*fftSize);
+	hanningWindow.resize( MainVar::fftSize);
 	createHanningWindow();
 }
 
@@ -47,7 +47,7 @@ void OverlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int
 
 		//count if enough samples are collected for the FFT calculations
 		inputForFFTCounter++; 
-		inputForFFTCounter %= *fftSize;
+		inputForFFTCounter %= MainVar::fftSize;
 
 		// [23467]
 		if (inputForFFTCounter == 0) {
@@ -55,18 +55,18 @@ void OverlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int
 			adjustMemoryPointersAndClearOutputMemory(); // [6,7]
 		}
 
-		outBuffer[i] = getOutputData() * (1.0f / (numOverlaps / 2));	
+		outBuffer[i] = getOutputData() * (1.0f / (MainVar::numOverlaps / 2));
 	}
 }
 
 // [2,3,4]
 void OverlapFFT::runThroughFFTs() { // 234
 	// run through all overlaps
-	for (int ovLap = 0; ovLap < numOverlaps; ovLap++) {
+	for (int ovLap = 0; ovLap < MainVar::numOverlaps; ovLap++) {
 
 		// calculate the indices for the current overlap
-		startIndex = ovLap * (*fftSize / numOverlaps);
-		endIndex = startIndex + *fftSize;
+		startIndex = ovLap * (MainVar::fftSize / MainVar::numOverlaps);
+		endIndex = startIndex + MainVar::fftSize;
 
 		// fill the fft buffer
 		fillFFTBuffer(startIndex, endIndex); //[2]
@@ -79,10 +79,10 @@ void OverlapFFT::runThroughFFTs() { // 234
 }
 
 // [2]
-void OverlapFFT::fillFFTBuffer(int startIndex, int endIndex)
+void OverlapFFT::fillFFTBuffer(int startindex, int endindex)
 {
-	for (int i = 0; i < *fftSize; i++) {
-		timeData[i]._Val[0] = inputMemory.readValue(i + startIndex);
+	for (int i = 0; i < MainVar::fftSize; i++) {
+		timeData[i]._Val[0] = inputMemory.readValue(i + startindex);
 	}
 }
 
@@ -91,7 +91,7 @@ void OverlapFFT::applyFFT(int ovLap) {
 	//FFT
 	applyHannningWindowToFftBuffer();
 
-	for (int i = 0; i < *fftSize; i++) {
+	for (int i = 0; i < MainVar::fftSize; i++) {
 		timeData[i]._Val[1] = 0.0f;
 	}
 
@@ -99,20 +99,20 @@ void OverlapFFT::applyFFT(int ovLap) {
 	// i.e. 256 positive cycloids and 256 negative cycloids.
 	fftFunctionP->perform(timeData, spectralDataIn, false);
 
-	for (int i = 0; i < *fftSize; i++) {
+	for (int i = 0; i < MainVar::fftSize; i++) {
 		carToPol(&spectralDataIn[i]._Val[0], &spectralDataIn[i]._Val[1]);
 		//if (i < 0.5 * fftsize) spectralDataIn[i]._Val[0] *= 2.0f;
-		if (i == 0 || i > 0.5 * *fftSize) spectralDataIn[i]._Val[0] = 0.0f; //set negative real values to 0.
+		if (i == 0 || i > 0.5 * MainVar::fftSize) spectralDataIn[i]._Val[0] = 0.0f; //set negative real values to 0.
 		spectralDataOut[i] = spectralDataIn[i];
 	}
 
 
 	//MODIFICATIONS	
-	binDelay.getOutputMagnitudes(spectralDataOut);
-	binDelay.pushMagnitudesIntoDelay(spectralDataIn);
+	binDelay.getOutputFromBinDelay(spectralDataOut);
+	binDelay.pushIntoBinDelay(spectralDataIn);
 	binDelay.adjustPointers();
 
-	for (int i = *fftSize / 2; i < *fftSize; i++) {
+	for (int i = MainVar::fftSize / 2; i < MainVar::fftSize; i++) {
 		spectralDataOut[i]._Val[0] = 0.0f;
 	}
 
@@ -126,7 +126,7 @@ void OverlapFFT::applyFFT(int ovLap) {
 	*/
 
 	////IFFT
-	for (int i = 0; i < *fftSize; i++) 
+	for (int i = 0; i < MainVar::fftSize; i++) 
 		polToCar(&spectralDataOut[i]._Val[0], &spectralDataOut[i]._Val[1]);
 
 	fftFunctionP->perform(spectralDataOut, timeData, true);
@@ -137,7 +137,7 @@ void OverlapFFT::applyFFT(int ovLap) {
 
 // [3.1]
 void OverlapFFT::applyHannningWindowToFftBuffer() {
-	for (int i = 0; i < *fftSize; i++) { //run through each input amplitude value.
+	for (int i = 0; i < MainVar::fftSize; i++) { //run through each input amplitude value.
 		timeData[i]._Val[0] *= hanningWindow[i];
 	}
 }
@@ -163,31 +163,31 @@ void OverlapFFT::polToCar(float* inMOutRe, float* inPhiOutIm) {
 
 // [4]
 void OverlapFFT::pushFFTDataIntoOutputDelayBuffer(int startIndex, int endIndex) {
-	for (int i = 0; i < *fftSize; i++) {
+	for (int i = 0; i < MainVar::fftSize; i++) {
 		outputMemory.addValue(timeData[i]._Val[0], i + startIndex);
 	}
 }
 
 // [5]
-float OverlapFFT::getOutputData() {
+double OverlapFFT::getOutputData() {
 	return outputMemory.readValue(inputForFFTCounter);
 }
 
 // [6, 7]
 void OverlapFFT::adjustMemoryPointersAndClearOutputMemory() {
-	outputMemory.clearBufferData(-3 * *fftSize, -2 * *fftSize);
+	outputMemory.clearBufferData(-3 * MainVar::fftSize, -2 * MainVar::fftSize);
 
-	inputMemory.adjustPointers(*fftSize);
-	outputMemory.adjustPointers(*fftSize);
+	inputMemory.adjustPointers(MainVar::fftSize);
+	outputMemory.adjustPointers(MainVar::fftSize);
 }
 
 void OverlapFFT::setBinDelayWithNewSampleRate(int sampleRate) {
-	binDelay.newBufferSize( numOverlaps * (sampleRate / *fftSize) * delayLength);
+	binDelay.newBufferSize(MainVar::numOverlaps * (sampleRate / MainVar::fftSize) * MainVar::maxDelInSec);
 }
 
 // Initialize the hanning window
 void OverlapFFT::createHanningWindow() {
-	for (int i = 0; i < *fftSize; i++) {
-		hanningWindow[i] = sin((float(i) / *fftSize) * float_Pi);
+	for (int i = 0; i < MainVar::fftSize; i++) {
+		hanningWindow[i] = sin((float(i) / MainVar::fftSize) * float_Pi);
 	}
 }

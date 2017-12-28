@@ -5,7 +5,7 @@ MultiSlider::MultiSlider(FftbinDelayAudioProcessor& p)
 	: processor(p)
 {
 	// Init delay values
-	for (int i = 0; i < nSliders; i++) {
+	for (int i = 0; i < MainVar::numBins; i++) {
 		delaySliderValues[i] = 1.0;
 	}
 }
@@ -15,10 +15,10 @@ void MultiSlider::paint(Graphics& g) {
 	g.drawRect(getLocalBounds());
 
 	g.setColour(Colours::white);
-	for (int i = 0; i < nSliders; i++) {
-		g.drawRect(i * (getWidth() / nSliders)
+	for (int i = 0; i < MainVar::numBins; i++) {
+		g.drawRect(i * (getWidth() / MainVar::numBins)
 			, (int) (delaySliderValues[i] * getHeight())
-			, getWidth() / nSliders
+			, getWidth() / MainVar::numBins
 			, 1);
 	}
 };
@@ -45,8 +45,8 @@ void MultiSlider::mouseDown(const MouseEvent& event) {
 void MultiSlider::reactToMouseValues(const MouseEvent& event) {
 	if (mouseIsInsideComponent) {
 		int yPixel = max(min(event.getPosition().getY(), getHeight()), 0);
-		int index = event.getPosition().getX() / (getWidth() / nSliders);
-		index = min(max(index, 0), nSliders - 1);
+		int index = event.getPosition().getX() / (getWidth() / MainVar::numBins);
+		index = min(max(index, 0), MainVar::numBins - 1);
 
 		delaySliderValues[index] = (float)yPixel / getHeight();
 		setBinDelayTimeValue(index, 
@@ -61,20 +61,20 @@ void MultiSlider::setBinDelayTimeValue(int index, float value) {
 	processor.setBinDelayTime(index, value);
 }
 
-float* MultiSlider::getSliderValues() {
+const float* MultiSlider::getSliderValues() const {
 	return delaySliderValues;
 }
 
-void MultiSlider::refreshDelaySliderValues(float* newDelays) {
-	for (int i = 0; i < nSliders; i++) {
-		delaySliderValues[i] = newDelays[i];
+void MultiSlider::refreshGUIValues(const float* newValues) {
+	for (int i = 0; i < MainVar::numBins; i++) {
+		delaySliderValues[i] = newValues[i];
 		//DBG("new value " << delaySliderValues[i]);
 	}
 	repaint();
 }
 
-void MultiSlider::refreshBinDelayTimeValues() {
-	for (int i = 0; i < nSliders; i++) {
+void MultiSlider::refreshDataValues() {
+	for (int i = 0; i < MainVar::numBins; i++) {
 		setBinDelayTimeValue(i, delaySliderValues[i]);
 	}
 }

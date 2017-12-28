@@ -8,14 +8,13 @@
 
 #include "blockDelay.h"
 #include "binDelay.h"
+#include "MainVar.h"
 
 class OverlapFFT {
 	public:
 		//OverlapFFT();
-		OverlapFFT(dsp::FFT *fftFunctionP, int * fftSize, int numOverlaps); //the used fft function and the amount of windows.
+		OverlapFFT(dsp::FFT *fftFunctionP); //the used fft function and the amount of windows.
 		~OverlapFFT();
-
-		void setPanData(float* panData) { pan = panData; }
 
 		// [1]
 		void pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int numSamples, int channel);
@@ -30,7 +29,7 @@ class OverlapFFT {
 		void pushFFTDataIntoOutputDelayBuffer(int startIndex, int endIndex); // [4]
 		
 		// [5]
-		float getOutputData(); 
+		double getOutputData();
 		// [6, 7]
 		void adjustMemoryPointersAndClearOutputMemory(); 
 
@@ -38,8 +37,7 @@ class OverlapFFT {
 		void createHanningWindow();
 
 	private:
-		int numOverlaps = 2,
-			//numFFTs = 2,
+		int //numFFTs = 2,
 			startIndex,
 			endIndex,
 			channel,
@@ -56,15 +54,12 @@ class OverlapFFT {
 		ForwardCircularDelay inputMemory;
 		int inputForFFTCounter = 0;
 
-		// pointer naar de fftSize
-		int * fftSize;
-
 		std::vector<float> hanningWindow;
 
 		// DE FFT PERFORM FUNCTIE ACCEPTEERT ALLEEN FLOATS
 		dsp::FFT *fftFunctionP;
 
-		float* pan;
+		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OverlapFFT);
 
 	public: BinDelay binDelay;
 };

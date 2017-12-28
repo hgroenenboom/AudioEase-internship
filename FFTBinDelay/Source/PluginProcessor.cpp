@@ -15,9 +15,8 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 			#endif 
 				)
 #endif
+	, fftFunction( MainVar::fftOrder)
 {
-	fftSizePointer = &fftSizeInt;
-	FFTFUNCTIONP = new dsp::FFT(fftOrder);
 
 	formatManager.registerBasicFormats(); 
 	myfile.open("myLog.txt");
@@ -27,7 +26,7 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 	}
 
 	for (int channel = 0; channel < 2; channel++) {
-		oFFT[channel] = new OverlapFFT(FFTFUNCTIONP, fftSizePointer, numFFTOverlaps);
+		oFFT[channel] = new OverlapFFT(&fftFunction);
 	}
 
 }
@@ -102,14 +101,14 @@ void FftbinDelayAudioProcessor::changeProgramName (int index, const String& newN
 }
 
 //==============================================================================
-void FftbinDelayAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void FftbinDelayAudioProcessor::prepareToPlay (double samplerate, int samplesPerBlock)
 {
-	transportSource.prepareToPlay(samplesPerBlock, sampleRate);
-	if (sampleRate != sampleRate) {
-		this->sampleRate = sampleRate;
+	transportSource.prepareToPlay(samplesPerBlock, samplerate);
+	if (samplerate != samplerate) {
+		this->sampleRate = (int) samplerate;
 	
 		for (int c = 0; c < 2; c++) {
-			oFFT[c]->setBinDelayWithNewSampleRate(sampleRate);
+			oFFT[c]->setBinDelayWithNewSampleRate( this->sampleRate);
 		}
 	}
 }
@@ -217,13 +216,13 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new FftbinDelayAudioProcessor();
 }
 
-void FftbinDelayAudioProcessor::setFeedbackValue(float feedback) {
+void FftbinDelayAudioProcessor::setFeedbackValue(double feedback) {
 	for (int c = 0; c < 2; c++) {
 		oFFT[c]->binDelay.setFeedback(feedback);
 	}
 }
 
-float FftbinDelayAudioProcessor::getFeedbackValue() {
+float FftbinDelayAudioProcessor::getFeedbackValue() const {
 	return oFFT[0]->binDelay.getFeedback();
 }
 
@@ -234,7 +233,7 @@ void FftbinDelayAudioProcessor::setBinDelayTime(int index, float value) {
 	}
 }
 
-float* FftbinDelayAudioProcessor::getBinDelayArray() {
+const float* FftbinDelayAudioProcessor::getBinDelayArray() const {
 	return delayArray;
 }
 

@@ -15,12 +15,14 @@ using namespace std;
 #include "overlapFFT.h"
 #include "blockDelay.h"
 
+
 //==============================================================================
 /**
 */
 class FftbinDelayAudioProcessor : public AudioProcessor
 {
 public:
+
     //==============================================================================
 	FftbinDelayAudioProcessor();
     ~FftbinDelayAudioProcessor();
@@ -59,10 +61,10 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 	// GUI functions.
-	void setFeedbackValue(float feedback);	
-	float getFeedbackValue();
+	void setFeedbackValue(double feedback);
+	float getFeedbackValue() const;
 	void setBinDelayTime(int index, float value);
-	float* getBinDelayArray();
+	const float* getBinDelayArray() const;
 
 	void playStopButtonClicked();
 	void openButtonClicked();
@@ -78,32 +80,21 @@ public:
 	bool bypass = false;
 	float delayTime = 100;
 
+	ScopedPointer<OverlapFFT> oFFT[2]; //channels
 private:
-	//fftSize
-	enum {
-		fftOrder = 8,
-		fftSize = 1 << fftOrder
-	};
-	
 	int sampleRate = 44100;
-	int fftSizeInt = 256;
-	int * fftSizePointer = nullptr;
 
 	// FFT variables.
-	ScopedPointer<dsp::FFT> FFTFUNCTIONP;
-	int numFFTOverlaps = 1 << 3;
-	OverlapFFT *oFFT[2]; //channels
-
-
-	//int binDelayTimeResInSamps = fftSize / numFFTOverlaps;
+	dsp::FFT fftFunction;
+	//array< OverlapFFT*, 2 > oFFT;
 
 	// logging
 	ofstream myfile;
 	int n = 0;
 
 	// GUI controlled parameters
-	float panLR = 0.5;
-	float delayArray[40]; //numBins
+	float panLR = 0.5f;
+	float delayArray[MainVar::numBins]; //numBins
 
     //==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FftbinDelayAudioProcessor)
