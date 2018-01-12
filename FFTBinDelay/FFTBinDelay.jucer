@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="OxeLyD" name="FFTBinDelay" displaySplashScreen="1" reportAppUsage="1"
-              splashScreenColour="Dark" projectType="audioplug" version="2.6"
+              splashScreenColour="Dark" projectType="audioplug" version="2.7"
               bundleIdentifier="com.yourcompany.FFTBinDelay" includeBinaryInAppConfig="1"
               cppLanguageStandard="11" companyCopyright="GreenSounds" buildVST="1"
               buildVST3="0" buildAU="1" buildAUv3="0" buildRTAS="0" buildAAX="0"
@@ -14,6 +14,8 @@
               companyName="GreenSounds" companyEmail="haroldgroenenboom@gmail.com">
   <MAINGROUP id="pORTYO" name="FFTBinDelay">
     <GROUP id="{904BC46F-D7BB-1525-D1DD-4B7F367B7A61}" name="Source">
+      <FILE id="tJ77Gx" name="Convolution.cpp" compile="1" resource="0" file="Source/Convolution.cpp"/>
+      <FILE id="LG5qW4" name="Convolution.h" compile="0" resource="0" file="Source/Convolution.h"/>
       <FILE id="NhW8NP" name="blockDelay.cpp" compile="1" resource="0" file="Source/blockDelay.cpp"/>
       <FILE id="UTqDgj" name="blockDelay.h" compile="0" resource="0" file="Source/blockDelay.h"/>
       <FILE id="ijp9Sj" name="PluginProcessor.cpp" compile="1" resource="0"
@@ -30,7 +32,11 @@
       <FILE id="FHlgo5" name="MultiSlider.cpp" compile="1" resource="0" file="Source/MultiSlider.cpp"/>
       <FILE id="vWKV7S" name="MultiSlider.h" compile="0" resource="0" file="Source/MultiSlider.h"/>
       <FILE id="x4IAqz" name="MainVar.h" compile="0" resource="0" file="Source/MainVar.h"/>
+      <FILE id="h7BR2G" name="BineuralData.cpp" compile="1" resource="0"
+            file="Source/BineuralData.cpp"/>
+      <FILE id="Sa1FSi" name="BineuralData.h" compile="0" resource="0" file="Source/BineuralData.h"/>
     </GROUP>
+    <FILE id="UQUju4" name="bindata" compile="0" resource="1" file="Source/bindata"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <VS2017 targetFolder="Builds/VisualStudio2017" windowsTargetPlatformVersion="10.0.16299.0">

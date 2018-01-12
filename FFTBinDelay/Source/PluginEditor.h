@@ -53,6 +53,7 @@ private:
 	int nButtons = 5;
 
 	Slider feedbackSlider;
+	Slider panSlider;
 	MultiSlider mSlider;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FftbinDelayAudioProcessorEditor)

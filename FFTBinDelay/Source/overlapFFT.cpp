@@ -21,7 +21,7 @@ OverlapFFT::OverlapFFT(dsp::FFT *fftfunctionpointer)
 	memset(spectralDataOut, 0, sizeof(dsp::Complex<float>));
 
 	// Initialize input & output memory
-	//inputMemory = ForwardCircularDelay(20 * MainVar::fftSize, MainVar::fftSize, true, 1);
+	//inputMemoryL = ForwardCircularDelay(20 * MainVar::fftSize, MainVar::fftSize, true, 1);
 	//outputMemory = ForwardCircularDelay(20 * MainVar::fftSize, MainVar::fftSize, true, 1);
 
 	hanningWindow.resize( MainVar::fftSize);
@@ -42,8 +42,8 @@ void OverlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int
 
 	for (int i = 0; i < numSamples; i++) {
 		// [1]
-		inputMemory.feedBack(0, 0.0f); 
-		inputMemory.pushSingleValue(channelData[i]); //push new data into the inputMemory. The memory will shift it's own pointer.
+		inputMemory.applyFeedback(0, 0.0f); 
+		inputMemory.pushSample(channelData[i]); //push new data into the inputMemoryL. The memory will shift it's own pointer.
 
 		//count if enough samples are collected for the FFT calculations
 		inputForFFTCounter++; 
@@ -82,7 +82,7 @@ void OverlapFFT::runThroughFFTs() { // 234
 void OverlapFFT::fillFFTBuffer(int startindex, int endindex)
 {
 	for (int i = 0; i < MainVar::fftSize; i++) {
-		timeData[i]._Val[0] = inputMemory.readValue(i + startindex);
+		timeData[i]._Val[0] = inputMemory.readSample(i + startindex);
 	}
 }
 
@@ -164,21 +164,21 @@ void OverlapFFT::polToCar(float* inMOutRe, float* inPhiOutIm) {
 // [4]
 void OverlapFFT::pushFFTDataIntoOutputDelayBuffer(int startIndex, int endIndex) {
 	for (int i = 0; i < MainVar::fftSize; i++) {
-		outputMemory.addValue(timeData[i]._Val[0], i + startIndex);
+		outputMemory.addSample(timeData[i]._Val[0], i + startIndex);
 	}
 }
 
 // [5]
-double OverlapFFT::getOutputData() {
-	return outputMemory.readValue(inputForFFTCounter);
+float OverlapFFT::getOutputData() {
+	return outputMemory.readSample(inputForFFTCounter);
 }
 
 // [6, 7]
 void OverlapFFT::adjustMemoryPointersAndClearOutputMemory() {
 	outputMemory.clearBufferData(-3 * MainVar::fftSize, -2 * MainVar::fftSize);
 
-	inputMemory.adjustPointers(MainVar::fftSize);
-	outputMemory.adjustPointers(MainVar::fftSize);
+	inputMemory.adjustDelayCentre(MainVar::fftSize);
+	outputMemory.adjustDelayCentre(MainVar::fftSize);
 }
 
 void OverlapFFT::setBinDelayWithNewSampleRate(int sampleRate) {

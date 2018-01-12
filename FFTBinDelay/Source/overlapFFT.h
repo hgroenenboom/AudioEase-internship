@@ -29,7 +29,7 @@ class OverlapFFT {
 		void pushFFTDataIntoOutputDelayBuffer(int startIndex, int endIndex); // [4]
 		
 		// [5]
-		double getOutputData();
+		float getOutputData();
 		// [6, 7]
 		void adjustMemoryPointersAndClearOutputMemory(); 
 

@@ -7,15 +7,16 @@
 FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
 	: AudioProcessor(BusesProperties()
-			#if ! JucePlugin_IsMidiEffect
-			 #if ! JucePlugin_IsSynth
-				.withInput("Input", AudioChannelSet::stereo(), true)
-			#endif
-				.withOutput("Output", AudioChannelSet::stereo(), true)
-			#endif 
-				)
+#if ! JucePlugin_IsMidiEffect
+#if ! JucePlugin_IsSynth
+		.withInput("Input", AudioChannelSet::stereo(), true)
 #endif
-	, fftFunction( MainVar::fftOrder)
+		.withOutput("Output", AudioChannelSet::stereo(), true)
+#endif 
+	)
+#endif
+	, fftFunction(MainVar::fftOrder)
+	, convolver(1 << 12)
 {
 
 	formatManager.registerBasicFormats(); 
@@ -166,8 +167,6 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 	if (bypass == false) {
 		for (int channel = 0; channel < 2; ++channel) //NOTE: nog mono
 		{
-			// POINTERS TO BUFFER
-
 			// FFT INPUT, MODIFICATIONS & OUTPUT: loop through every sample of the buffer and perform fft if fftSize samples have been received
 			oFFT[channel]->pushDataIntoMemoryAndPerformFFTs(buffer, buffer.getNumSamples(), channel);
 
@@ -179,6 +178,11 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 			}
 			else { n++; }*/
 		}
+
+		actualPan += ((panLR - 0.5f) * 0.03);
+		actualPan = (actualPan < 0.0f) ? actualPan + 1.0f : actualPan;
+		actualPan = (actualPan > 1.0f) ? actualPan - 1.0f : actualPan;
+		convolver.convolve(buffer, buffer.getNumSamples(), actualPan);
 	}
 
 	//buffer.clear(1, 0, buffer.getNumSamples());
@@ -216,7 +220,7 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new FftbinDelayAudioProcessor();
 }
 
-void FftbinDelayAudioProcessor::setFeedbackValue(double feedback) {
+void FftbinDelayAudioProcessor::setFeedbackValue(float feedback) {
 	for (int c = 0; c < 2; c++) {
 		oFFT[c]->binDelay.setFeedback(feedback);
 	}
@@ -261,6 +265,7 @@ void FftbinDelayAudioProcessor::openButtonClicked() {
 
 		if (reader != nullptr)
 		{
+
 			ScopedPointer<AudioFormatReaderSource> newSource = new AudioFormatReaderSource(reader, true); // [11]
 			transportSource.setSource(newSource, 0, nullptr, reader->sampleRate);                         // [12]
 																										  //playButton.setEnabled(true);                                                                  // [13]

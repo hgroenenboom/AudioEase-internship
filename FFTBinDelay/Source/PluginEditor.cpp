@@ -51,6 +51,10 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	phaseDelayButton.addListener(this);
 	phaseDelayButton.setButtonText("Delay phase");
 
+	addAndMakeVisible(&panSlider);
+	panSlider.addListener(this);
+	panSlider.setRange(0.0, 0.99999, 0.001);
+
 	refreshButtons();
 	refreshSliders();
 
@@ -86,7 +90,8 @@ void FftbinDelayAudioProcessorEditor::resized()
 	phaseDelayButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 
 	auto midHeader = space.removeFromTop(50);
-	feedbackSlider.setBounds(midHeader.removeFromTop( midHeader.getHeight()) );
+	feedbackSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 2) );
+	panSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight()));
 
 	space.reduce(50, 50);
 	mSlider.setBounds(space);
@@ -105,6 +110,11 @@ void FftbinDelayAudioProcessorEditor::sliderValueChanged(Slider* slider) {
 	if (slider == &feedbackSlider) {
 		//slider->setColour(slider->thumbColourId, Colours::rosybrown);
 		newFeedbackSliderValue();
+	}
+
+	if (slider == &panSlider) {
+		float pan = panSlider.getValue();
+			processor.setPanValue(pan);
 	}
 }
 
@@ -232,5 +242,6 @@ void FftbinDelayAudioProcessorEditor::newFeedbackSliderValue() {
 void FftbinDelayAudioProcessorEditor::refreshSliders() {
 	feedbackSlider.setValue( processor.getFeedbackValue());
 	mSlider.refreshGUIValues(processor.getBinDelayArray());
+	panSlider.setValue(processor.getPanValue());
 };
 

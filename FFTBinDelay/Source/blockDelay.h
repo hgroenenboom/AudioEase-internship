@@ -20,12 +20,12 @@ class ForwardCircularDelay {
 		// GENERAL FUNCTIONS
 		//
 		// read a value offsetted from the read pointer.
-		double readValue(int index = 0);
-		void feedBack(int index = 0, float feedback = 0);
+		float readSample(int index = 0);
+		void applyFeedback(int index = 0, float feedback = 0);
 		// write a value offsetted from the write pointer.
-		void addValue(float value, int index = 0);
+		void addSample(float value, int index = 0);
 		// adjust the pointers after the delay has received the expected amount of samples.
-		void adjustPointers(int numSteps = 1);
+		void adjustDelayCentre(int numSteps = 1);
 		// setDelayTime;
 		void setDelayTime(float delayTime);
 
@@ -36,24 +36,34 @@ class ForwardCircularDelay {
 		// zero fill a part of the delayBuffer using offsets from the currentPosition. 
 		void clearBufferData(int startOffset, int endOffset);
 		// push new input into the delayBuffer and move the readpointer. Use this function inside your callback.
-		void pushSingleValue(float sample);
+		void pushSample(float sample);
+		// 
+		void sortByTime();
+		float* getTimeSortedVersion() const;
+
+		void pushData(float* data, int dataLength);
+		void pushData(const float* data, int dataLength);
+
+		float* getBufferData() const;
+		float* getTimeSortedBufferData() const;
+		int getMemSize() const;
 
 	private:
 		//The resizable buffer used by the delay
-		double * delayBuffer;
+		float * delayBuffer;
 
 		// delay constants
 		bool delayTimeIsBufferLength;
-		int MEMSIZE;
+		int memsizeInSamples;
 
 		float feedback = 0.0;
 		float feedbackControl = 1.0f; // used to kill the sound if irresponsible values are presented
 
 		// delay length variables.
 		int delayInBlocks;
-		int delayInValues;
+		int delayInSamples;
 		int delayModulo;
-		int valuesPerBlock = 1;
+		int samplesPerBlock = 1;
 
 		// delay location markers.
 		int currentPosition;

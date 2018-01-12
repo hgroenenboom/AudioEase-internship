@@ -14,6 +14,7 @@ using namespace std;
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "overlapFFT.h"
 #include "blockDelay.h"
+#include "Convolution.h"
 
 
 //==============================================================================
@@ -61,7 +62,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 	// GUI functions.
-	void setFeedbackValue(double feedback);
+	void setFeedbackValue(float feedback);
 	float getFeedbackValue() const;
 	void setBinDelayTime(int index, float value);
 	const float* getBinDelayArray() const;
@@ -69,6 +70,7 @@ public:
 	void playStopButtonClicked();
 	void openButtonClicked();
 
+	void setPanValue(float p) { panLR = p;  }
 	float getPanValue() { return panLR; };
 
 	// filePlaying variables
@@ -86,6 +88,7 @@ private:
 
 	// FFT variables.
 	dsp::FFT fftFunction;
+	ConvolveTimeDomainForCallbacks convolver;
 	//array< OverlapFFT*, 2 > oFFT;
 
 	// logging
@@ -94,7 +97,8 @@ private:
 
 	// GUI controlled parameters
 	float panLR = 0.5f;
-	float delayArray[MainVar::numBins]; //numBins
+	float actualPan = 0.0f;
+	float delayArray[MainVar::numBins + 1]; //numBins
 
     //==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FftbinDelayAudioProcessor)

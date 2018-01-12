@@ -31,6 +31,7 @@
 #include <juce_opengl/juce_opengl.h>
 #include <juce_video/juce_video.h>
 
+#include "BinaryData.h"
 
 #if ! DONT_SET_USING_JUCE_NAMESPACE
  // If your code uses a lot of JUCE classes, then this will obviously save you
@@ -42,7 +43,7 @@
 namespace ProjectInfo
 {
     const char* const  projectName    = "FFTBinDelay";
-    const char* const  versionString  = "2.6";
-    const int          versionNumber  = 0x20600;
+    const char* const  versionString  = "2.7";
+    const int          versionNumber  = 0x20700;
 }
 #endif
