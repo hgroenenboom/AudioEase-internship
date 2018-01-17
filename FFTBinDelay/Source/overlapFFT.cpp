@@ -95,41 +95,40 @@ void OverlapFFT::applyFFT(int ovLap) {
 		timeData[i]._Val[1] = 0.0f;
 	}
 
-	//256 complex vectors and 256 complex conjugates of the first 256 vectors
-	// i.e. 256 positive cycloids and 256 negative cycloids.
-	fftFunctionP->perform(timeData, spectralDataIn, false);
+	if (runFFTs) {
+		//256 complex vectors and 256 complex conjugates of the first 256 vectors
+		// i.e. 256 positive cycloids and 256 negative cycloids.
+		fftFunctionP->perform(timeData, spectralDataIn, false);
 
-	for (int i = 0; i < MainVar::fftSize; i++) {
-		carToPol(&spectralDataIn[i]._Val[0], &spectralDataIn[i]._Val[1]);
-		//if (i < 0.5 * fftsize) spectralDataIn[i]._Val[0] *= 2.0f;
-		if (i == 0 || i > 0.5 * MainVar::fftSize) spectralDataIn[i]._Val[0] = 0.0f; //set negative real values to 0.
-		spectralDataOut[i] = spectralDataIn[i];
+		
+		for (int i = 0; i < MainVar::fftSize; i++) {
+			carToPol(&spectralDataIn[i]._Val[0], &spectralDataIn[i]._Val[1]);
+			//if (i > 0.5 * MainVar::fftSize) spectralDataIn[i]._Val[0] = 0.0f;
+			//if (i > 0.5 * MainVar::fftSize) spectralDataIn[i]._Val[1] = 0.0f;
+
+			//if (i < 0.5 * fftsize) spectralDataIn[i]._Val[0] *= 2.0f;
+			//if (i == 0 || i > 0.5 * MainVar::fftSize) spectralDataIn[i]._Val[0] = 0.0f; //set negative real values to 0.
+			spectralDataOut[i] = spectralDataIn[i];
+		}
+
+
+		//MODIFICATIONS	
+		binDelay.getOutputFromBinDelay(spectralDataOut);
+		binDelay.pushIntoBinDelay(spectralDataIn);
+		binDelay.adjustPointers();
+
+		for (int i = MainVar::fftSize / 2; i < MainVar::fftSize; i++) {
+			//spectralDataOut[i]._Val[0] = 0.0f;
+		}
+
+
+		
+		////IFFT
+		for (int i = 0; i < MainVar::fftSize; i++)
+			polToCar(&spectralDataOut[i]._Val[0], &spectralDataOut[i]._Val[1]);
+
+		fftFunctionP->perform(spectralDataOut, timeData, true);
 	}
-
-
-	//MODIFICATIONS	
-	binDelay.getOutputFromBinDelay(spectralDataOut);
-	binDelay.pushIntoBinDelay(spectralDataIn);
-	binDelay.adjustPointers();
-
-	for (int i = MainVar::fftSize / 2; i < MainVar::fftSize; i++) {
-		spectralDataOut[i]._Val[0] = 0.0f;
-	}
-
-
-	// CHANNEL SPECIFIC MODIFICATIONS
-	/*
-	switch (chan) {
-	case 0:
-	case 1:
-	}
-	*/
-
-	////IFFT
-	for (int i = 0; i < MainVar::fftSize; i++) 
-		polToCar(&spectralDataOut[i]._Val[0], &spectralDataOut[i]._Val[1]);
-
-	fftFunctionP->perform(spectralDataOut, timeData, true);
 
 	//Apply hanningWindow
 	applyHannningWindowToFftBuffer();
@@ -189,5 +188,8 @@ void OverlapFFT::setBinDelayWithNewSampleRate(int sampleRate) {
 void OverlapFFT::createHanningWindow() {
 	for (int i = 0; i < MainVar::fftSize; i++) {
 		hanningWindow[i] = sin((float(i) / MainVar::fftSize) * float_Pi);
+		hanningWindow[i] = pow(hanningWindow[i], log2((float)MainVar::numOverlaps));
+		//hanningWindow[i] = pow(hanningWindow[i], 2);
+
 	}
 }

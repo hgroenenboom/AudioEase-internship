@@ -79,7 +79,8 @@ public:
 	AudioTransportSource transportSource;
 
 	// GUI variable
-	bool bypass = false;
+	bool bypass = false, runoFFT = false;
+
 	float delayTime = 100;
 
 	ScopedPointer<OverlapFFT> oFFT[2]; //channels
@@ -96,7 +97,7 @@ private:
 	int n = 0;
 
 	// GUI controlled parameters
-	float panLR = 0.5f;
+	float panLR = 0.503f;
 	float actualPan = 0.0f;
 	float delayArray[MainVar::numBins + 1]; //numBins
 

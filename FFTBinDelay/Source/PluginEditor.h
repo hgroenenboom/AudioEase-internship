@@ -30,6 +30,7 @@ public:
 	void refreshButton(TextButton& button, bool condition);
 
 	void buttonClicked(Button* button) override;
+	void changeButtonColour(TextButton &button, bool condition, bool greenIsTrueOrFals);
 	void playButtonClicked();
 	void openButtonClicked();
 	void bypassButtonClicked();
@@ -47,14 +48,16 @@ private:
 
 	TextButton openButton;
 	TextButton playStopButton;
-	TextButton bypassButton;
+	TextButton mainBypass;
+	TextButton oFFTBypass;
+	TextButton fftBypass;
 	TextButton delayRangeButton;
 	TextButton phaseDelayButton;
-	int nButtons = 5;
+	int nButtons = 6;
 
 	Slider feedbackSlider;
 	Slider panSlider;
-	MultiSlider mSlider;
+	MultiSlider delaySliders;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FftbinDelayAudioProcessorEditor)
 };

@@ -36,6 +36,9 @@ class OverlapFFT {
 		void setBinDelayWithNewSampleRate(int sampleRate);
 		void createHanningWindow();
 
+
+		//GUI variable:
+		bool runFFTs = true;
 	private:
 		int //numFFTs = 2,
 			startIndex,

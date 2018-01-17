@@ -15,14 +15,14 @@
 //==============================================================================
 FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAudioProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
-	, mSlider(p)
+	, delaySliders(p)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
 
-	setSize(400, 300);
+	//setSize(600, 400);
 
-	addAndMakeVisible(&mSlider);
+	addAndMakeVisible(&delaySliders);
 
 	addAndMakeVisible(&openButton);
 	openButton.setButtonText("Open...");
@@ -38,10 +38,9 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	feedbackSlider.addListener(this);
 	feedbackSlider.setRange(0.0, 1.0, 0.001);
 
-	addAndMakeVisible(&bypassButton);
-	bypassButton.addListener(this);
-	playStopButton.setColour(TextButton::buttonColourId, Colours::aliceblue);
-	bypassButton.setButtonText("ByPass");
+	addAndMakeVisible(&mainBypass);
+	mainBypass.addListener(this);
+	mainBypass.setButtonText("ByPass");
 
 	addAndMakeVisible(&delayRangeButton);
 	delayRangeButton.addListener(this);
@@ -51,6 +50,15 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	phaseDelayButton.addListener(this);
 	phaseDelayButton.setButtonText("Delay phase");
 
+	addAndMakeVisible(&oFFTBypass);
+	oFFTBypass.addListener(this);
+	oFFTBypass.setColour(TextButton::buttonColourId, Colours::aliceblue);
+	oFFTBypass.setButtonText("Run oFFT");
+	addAndMakeVisible(&fftBypass);
+	fftBypass.addListener(this);
+	fftBypass.setColour(TextButton::buttonColourId, Colours::aliceblue);
+	fftBypass.setButtonText("Run FFT");
+
 	addAndMakeVisible(&panSlider);
 	panSlider.addListener(this);
 	panSlider.setRange(0.0, 0.99999, 0.001);
@@ -58,7 +66,7 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	refreshButtons();
 	refreshSliders();
 
-	setSize(500, 500);
+	setSize(700, 600);
 
 	processor.transportSource.addChangeListener(this);   // zorgt ervoor dat elke change in transportSource de listener functie acti
 }
@@ -82,19 +90,27 @@ void FftbinDelayAudioProcessorEditor::resized()
 {
 	auto space = getLocalBounds();
 
-	auto topHeader = space.removeFromTop(50);
+	int topHeaderSize = 80;
+	auto topHeader = space.removeFromTop(topHeaderSize);
 	openButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 	playStopButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
-	bypassButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+	mainBypass.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+
+	auto spaceForFFTBypass = topHeader.removeFromLeft(getWidth() / nButtons);
+	oFFTBypass.setBounds(spaceForFFTBypass.removeFromTop(topHeaderSize  - topHeaderSize / 2.5));
+	fftBypass.setBounds(spaceForFFTBypass);
+
 	delayRangeButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 	phaseDelayButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+
+
 
 	auto midHeader = space.removeFromTop(50);
 	feedbackSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 2) );
 	panSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight()));
 
 	space.reduce(50, 50);
-	mSlider.setBounds(space);
+	delaySliders.setBounds(space);
 }
 
 // callback when something changes in the processor.
@@ -102,19 +118,115 @@ void FftbinDelayAudioProcessorEditor::changeListenerCallback(ChangeBroadcaster* 
 {
 	if (source == &processor.transportSource) {
 		refreshButtons();
+		refreshSliders();
 	}
 }
 
-// the overrided abstract sliderValueChanged function. Called if a slider value is changed.
-void FftbinDelayAudioProcessorEditor::sliderValueChanged(Slider* slider) {
-	if (slider == &feedbackSlider) {
-		//slider->setColour(slider->thumbColourId, Colours::rosybrown);
-		newFeedbackSliderValue();
+// the overrided abstract button clicked function. Called when a button is clicked.
+void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
+{
+	if (button == &openButton) {
+		openButtonClicked();
+	}
+	if (button == &playStopButton) {
+		playButtonClicked();
+	}
+	if (button == &mainBypass) {
+		bypassButtonClicked();
+	}
+	if (button == &delayRangeButton) {
+		rangeButtonClicked();
+	}
+	if (button == &phaseDelayButton) {
+		phaseInDelayButtonClicked();
+	}
+	if (button == &oFFTBypass) {
+		processor.runoFFT = !processor.runoFFT;
+		changeButtonColour(oFFTBypass, processor.runoFFT, true);
+		fftBypass.setEnabled(processor.runoFFT);
+		if (!processor.runoFFT) {
+			fftBypass.setColour(TextButton::ColourIds::buttonColourId, Colours::darkred);
+		}
+		else {
+			refreshButton(fftBypass, processor.oFFT[0]->runFFTs);
+		}
+	}
+	if (button == &fftBypass) {
+		if (processor.oFFT[0]->runFFTs == true) {
+			processor.oFFT[0]->runFFTs = false;
+			processor.oFFT[1]->runFFTs = false;
+		}
+		else {
+			processor.oFFT[0]->runFFTs = true;
+			processor.oFFT[1]->runFFTs = true;
+		}
+		changeButtonColour(fftBypass, processor.oFFT[0]->runFFTs, true);
 	}
 
-	if (slider == &panSlider) {
-		float pan = panSlider.getValue();
-			processor.setPanValue(pan);
+}
+
+void FftbinDelayAudioProcessorEditor::changeButtonColour(TextButton& button, bool condition, bool greenIsTrueOrFalse) {
+	if (condition == greenIsTrueOrFalse) {
+		button.setColour(TextButton::buttonColourId, Colours::green);
+	}
+	else {
+		button.setColour(TextButton::buttonColourId, Colours::black);
+	}
+}
+
+
+void FftbinDelayAudioProcessorEditor::playButtonClicked() {
+	playStopButton.setColour(TextButton::buttonColourId, Colours::rebeccapurple); //test de functie call.
+	processor.playStopButtonClicked();
+};
+
+void FftbinDelayAudioProcessorEditor::openButtonClicked() {
+	openButton.setColour(TextButton::buttonColourId, Colours::rebeccapurple);
+	processor.openButtonClicked();
+};
+
+void FftbinDelayAudioProcessorEditor::bypassButtonClicked() {
+	if (processor.bypass == false) {
+		mainBypass.setColour(TextButton::buttonColourId, Colours::green);
+	}
+	else {
+		mainBypass.setColour(TextButton::buttonColourId, Colours::black);
+	}
+
+	processor.bypass = !processor.bypass;
+};
+
+void FftbinDelayAudioProcessorEditor::rangeButtonClicked() {
+	if (processor.delayTime == MainVar::delRangeLong) {
+		delayRangeButton.setColour(TextButton::buttonColourId, Colours::black);
+		processor.delayTime = MainVar::delRangeShort;
+		delayRangeButton.setButtonText("Short");
+		delayRangeButton.setColour(TextButton::textColourOffId, Colours::lightblue);
+	}
+	else {
+		delayRangeButton.setColour(TextButton::buttonColourId, Colours::green);
+		processor.delayTime = MainVar::delRangeLong;
+		delayRangeButton.setButtonText("Long");
+		delayRangeButton.setColour(TextButton::textColourOffId, Colours::white);
+	}
+
+	delaySliders.refreshDataValues();
+}
+
+void FftbinDelayAudioProcessorEditor::phaseInDelayButtonClicked() {
+	if (processor.oFFT[0]->binDelay.phaseInDelay) {
+		phaseDelayButton.setColour(TextButton::buttonColourId, Colours::black);
+		processor.oFFT[0]->binDelay.phaseInDelay = false;
+		processor.oFFT[1]->binDelay.phaseInDelay = false;
+		phaseDelayButton.setButtonText("Phase is not in delay");
+		phaseDelayButton.setColour(TextButton::textColourOffId, Colours::lightblue);
+	}
+	else {
+		phaseDelayButton.setColour(TextButton::buttonColourId, Colours::green);
+		processor.oFFT[0]->binDelay.phaseInDelay = true;
+		processor.oFFT[1]->binDelay.phaseInDelay = true;
+		phaseDelayButton.setButtonText("Phase is in delay");
+		phaseDelayButton.setColour(TextButton::textColourOffId, Colours::white);
 	}
 }
 
@@ -141,14 +253,23 @@ void FftbinDelayAudioProcessorEditor::refreshButtons() {
 	}
 
 	if (processor.bypass == true) {
-		bypassButton.setColour(TextButton::buttonColourId, Colours::green);
+		mainBypass.setColour(TextButton::buttonColourId, Colours::green);
 	}
 	else {
-		bypassButton.setColour(TextButton::buttonColourId, Colours::black);
+		mainBypass.setColour(TextButton::buttonColourId, Colours::black);
 	}
 
 	refreshButton(delayRangeButton, processor.delayTime == MainVar::delRangeLong);
 	refreshButton(phaseDelayButton, processor.oFFT[0]->binDelay.phaseInDelay);
+	refreshButton(oFFTBypass, processor.runoFFT);
+	refreshButton(fftBypass, processor.oFFT[0]->runFFTs);
+
+	if (!processor.runoFFT) {
+		fftBypass.setColour(TextButton::ColourIds::buttonColourId, Colours::darkred);
+	}
+	else {
+		refreshButton(fftBypass, processor.oFFT[0]->runFFTs);
+	}
 }
 
 void FftbinDelayAudioProcessorEditor::refreshButton(TextButton& button, bool condition) {
@@ -160,78 +281,21 @@ void FftbinDelayAudioProcessorEditor::refreshButton(TextButton& button, bool con
 	}
 }
 
-// the overrided abstract button clicked function. Called when a button is clicked.
-void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
-{
-	if (button == &openButton) {
-		openButtonClicked();
-	}
-	if (button == &playStopButton) {
-		playButtonClicked();
-	}
-	if (button == &bypassButton) {
-		bypassButtonClicked();
-	}
-	if (button == &delayRangeButton) {
-		rangeButtonClicked();
-	}
-	if (button == &phaseDelayButton) {
-		phaseInDelayButtonClicked();
-	}
-}
 
-void FftbinDelayAudioProcessorEditor::playButtonClicked() {
-	playStopButton.setColour(TextButton::buttonColourId, Colours::rebeccapurple); //test de functie call.
-	processor.playStopButtonClicked();
-};
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
-void FftbinDelayAudioProcessorEditor::openButtonClicked() {
-	openButton.setColour(TextButton::buttonColourId, Colours::rebeccapurple);
-	processor.openButtonClicked();
-};
 
-void FftbinDelayAudioProcessorEditor::bypassButtonClicked() {
-	if (processor.bypass == false) {
-		bypassButton.setColour(TextButton::buttonColourId, Colours::green);
-		processor.bypass = true;
-	}
-	else {
-		bypassButton.setColour(TextButton::buttonColourId, Colours::black);
-		processor.bypass = false;
-	}
-};
-
-void FftbinDelayAudioProcessorEditor::rangeButtonClicked() {
-	if (processor.delayTime == MainVar::delRangeLong) {
-		delayRangeButton.setColour(TextButton::buttonColourId, Colours::black);
-		processor.delayTime = MainVar::delRangeShort;
-		delayRangeButton.setButtonText("Short");
-		delayRangeButton.setColour(TextButton::textColourOffId, Colours::lightblue);
-	}
-	else {
-		delayRangeButton.setColour(TextButton::buttonColourId, Colours::green);
-		processor.delayTime = MainVar::delRangeLong;
-		delayRangeButton.setButtonText("Long");
-		delayRangeButton.setColour(TextButton::textColourOffId, Colours::white);
+// the overrided abstract sliderValueChanged function. Called if a slider value is changed.
+void FftbinDelayAudioProcessorEditor::sliderValueChanged(Slider* slider) {
+	if (slider == &feedbackSlider) {
+		//slider->setColour(slider->thumbColourId, Colours::rosybrown);
+		newFeedbackSliderValue();
 	}
 
-	mSlider.refreshDataValues();
-}
-
-void FftbinDelayAudioProcessorEditor::phaseInDelayButtonClicked() {
-	if (processor.oFFT[0]->binDelay.phaseInDelay) {
-		phaseDelayButton.setColour(TextButton::buttonColourId, Colours::black);
-		processor.oFFT[0]->binDelay.phaseInDelay = false;
-		processor.oFFT[1]->binDelay.phaseInDelay = false;
-		phaseDelayButton.setButtonText("Phase is not in delay");
-		phaseDelayButton.setColour(TextButton::textColourOffId, Colours::lightblue);
-	}
-	else {
-		phaseDelayButton.setColour(TextButton::buttonColourId, Colours::green);
-		processor.oFFT[0]->binDelay.phaseInDelay = true;
-		processor.oFFT[1]->binDelay.phaseInDelay = true;
-		phaseDelayButton.setButtonText("Phase is in delay");
-		phaseDelayButton.setColour(TextButton::textColourOffId, Colours::white);
+	if (slider == &panSlider) {
+		float pan = panSlider.getValue();
+		processor.setPanValue(pan);
 	}
 }
 
@@ -241,7 +305,7 @@ void FftbinDelayAudioProcessorEditor::newFeedbackSliderValue() {
 
 void FftbinDelayAudioProcessorEditor::refreshSliders() {
 	feedbackSlider.setValue( processor.getFeedbackValue());
-	mSlider.refreshGUIValues(processor.getBinDelayArray());
+	delaySliders.refreshGUIValues(processor.getBinDelayArray());
 	panSlider.setValue(processor.getPanValue());
 };
 

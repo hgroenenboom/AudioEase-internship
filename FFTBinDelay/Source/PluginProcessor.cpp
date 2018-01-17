@@ -158,17 +158,20 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 	const AudioSourceChannelInfo inputInfo(buffer);
 	if (readerSource == nullptr)
 	{
-		//inputInfo.clearActiveBufferRegion();
+		// do nothing 
 	}
 	else {
+		inputInfo.clearActiveBufferRegion(); // needed for clean sound
 		transportSource.getNextAudioBlock(inputInfo);
 	}
 
 	if (bypass == false) {
-		for (int channel = 0; channel < 2; ++channel) //NOTE: nog mono
+		for (int channel = 0; channel < 2; ++channel)
 		{
 			// FFT INPUT, MODIFICATIONS & OUTPUT: loop through every sample of the buffer and perform fft if fftSize samples have been received
-			oFFT[channel]->pushDataIntoMemoryAndPerformFFTs(buffer, buffer.getNumSamples(), channel);
+			if (runoFFT == true) {
+				oFFT[channel]->pushDataIntoMemoryAndPerformFFTs(buffer, buffer.getNumSamples(), channel);
+			}
 
 			// LOG TO FILE
 			/*if (panLR != 0.5) myfile << "panning: " << panLR << "\n";
@@ -179,13 +182,13 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 			else { n++; }*/
 		}
 
-		actualPan += ((panLR - 0.5f) * 0.03);
-		actualPan = (actualPan < 0.0f) ? actualPan + 1.0f : actualPan;
-		actualPan = (actualPan > 1.0f) ? actualPan - 1.0f : actualPan;
-		convolver.convolve(buffer, buffer.getNumSamples(), actualPan);
+		//actualPan += ((panLR - 0.5f) * 0.03);
+		//actualPan = (actualPan < 0.0f) ? actualPan + 1.0f : actualPan;
+		//actualPan = (actualPan > 1.0f) ? actualPan - 1.0f : actualPan;
+		convolver.convolve(buffer, buffer.getNumSamples(), 0.5, ((panLR - 0.5f) * 0.1f));
 	}
 
-	//buffer.clear(1, 0, buffer.getNumSamples());
+	buffer.clear(1, 0, buffer.getNumSamples());
 }
 
 //==============================================================================
