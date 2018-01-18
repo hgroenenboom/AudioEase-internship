@@ -79,7 +79,8 @@ public:
 	AudioTransportSource transportSource;
 
 	// GUI variable
-	bool bypass = false, runoFFT = false;
+	bool bypass = false, runoFFT = true, muteL = false, muteR = false;
+	float temp = 0;
 
 	float delayTime = 100;
 
@@ -88,7 +89,7 @@ private:
 	int sampleRate = 44100;
 
 	// FFT variables.
-	dsp::FFT fftFunction;
+	dsp::FFT fftFunction, fft2Function;
 	ConvolveTimeDomainForCallbacks convolver;
 	//array< OverlapFFT*, 2 > oFFT;
 
@@ -97,7 +98,7 @@ private:
 	int n = 0;
 
 	// GUI controlled parameters
-	float panLR = 0.503f;
+	float panLR = 0.0f;
 	float actualPan = 0.0f;
 	float delayArray[MainVar::numBins + 1]; //numBins
 

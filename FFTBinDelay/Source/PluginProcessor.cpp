@@ -16,6 +16,7 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 	)
 #endif
 	, fftFunction(MainVar::fftOrder)
+	, fft2Function(MainVar::fftOrder + 2)
 	, convolver(1 << 12)
 {
 
@@ -27,7 +28,7 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 	}
 
 	for (int channel = 0; channel < 2; channel++) {
-		oFFT[channel] = new OverlapFFT(&fftFunction);
+		oFFT[channel] = new OverlapFFT();
 	}
 
 }
@@ -112,6 +113,7 @@ void FftbinDelayAudioProcessor::prepareToPlay (double samplerate, int samplesPer
 			oFFT[c]->setBinDelayWithNewSampleRate( this->sampleRate);
 		}
 	}
+	//openButtonClicked();
 }
 
 void FftbinDelayAudioProcessor::releaseResources()
@@ -185,10 +187,11 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 		//actualPan += ((panLR - 0.5f) * 0.03);
 		//actualPan = (actualPan < 0.0f) ? actualPan + 1.0f : actualPan;
 		//actualPan = (actualPan > 1.0f) ? actualPan - 1.0f : actualPan;
-		convolver.convolve(buffer, buffer.getNumSamples(), 0.5, ((panLR - 0.5f) * 0.1f));
+		convolver.convolve(buffer, buffer.getNumSamples(), 0.5, ((panLR - 0.5f) * 0.1f), panLR, temp);
 	}
 
-	buffer.clear(1, 0, buffer.getNumSamples());
+	if(muteL) buffer.clear(0, 0, buffer.getNumSamples());
+	if(muteR) buffer.clear(1, 0, buffer.getNumSamples());
 }
 
 //==============================================================================
@@ -226,6 +229,7 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 void FftbinDelayAudioProcessor::setFeedbackValue(float feedback) {
 	for (int c = 0; c < 2; c++) {
 		oFFT[c]->binDelay.setFeedback(feedback);
+		temp = feedback;
 	}
 }
 
@@ -236,7 +240,7 @@ float FftbinDelayAudioProcessor::getFeedbackValue() const {
 void FftbinDelayAudioProcessor::setBinDelayTime(int index, float value) {
 	delayArray[index] = value;
 	for (int c = 0; c < 2; c++) {
-		oFFT[c]->binDelay.setDelayTime(index, (1 - value) * delayTime);
+		oFFT[c]->binDelay.setDelayTime(index, max(0.0f, (1.0f - value) * delayTime) );
 	}
 }
 

@@ -59,6 +59,9 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	fftBypass.setColour(TextButton::buttonColourId, Colours::aliceblue);
 	fftBypass.setButtonText("Run FFT");
 
+	buttonInit(muteL, "mute L");
+	buttonInit(muteR, "mute R");
+
 	addAndMakeVisible(&panSlider);
 	panSlider.addListener(this);
 	panSlider.setRange(0.0, 0.99999, 0.001);
@@ -83,7 +86,8 @@ void FftbinDelayAudioProcessorEditor::paint (Graphics& g)
 
     g.setColour (Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("2.6.2 Working on the TODO list. Next: DryWet slider", getLocalBounds(), Justification::bottomRight, 1);
+    g.drawFittedText ("2.7.2 Rebuild oFFT using my knowledge about convolution, and how feedback and bindelays result in a complex convolution. Larger buffers are now used.
+    Next focus is convolution", getLocalBounds(), Justification::bottomRight, 1);
 }
 
 void FftbinDelayAudioProcessorEditor::resized()
@@ -99,6 +103,10 @@ void FftbinDelayAudioProcessorEditor::resized()
 	auto spaceForFFTBypass = topHeader.removeFromLeft(getWidth() / nButtons);
 	oFFTBypass.setBounds(spaceForFFTBypass.removeFromTop(topHeaderSize  - topHeaderSize / 2.5));
 	fftBypass.setBounds(spaceForFFTBypass);
+	
+	auto spaceForMuteChan = topHeader.removeFromLeft(getWidth() / nButtons);
+	muteL.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize / 2));
+	muteR.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize));
 
 	delayRangeButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 	phaseDelayButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
@@ -160,13 +168,77 @@ void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
 			processor.oFFT[0]->runFFTs = true;
 			processor.oFFT[1]->runFFTs = true;
 		}
-		changeButtonColour(fftBypass, processor.oFFT[0]->runFFTs, true);
+		changeButtonColour(fftBypass, processor.oFFT[0]->runFFTs);
+	}
+
+	if (button == &muteL) {
+		processor.muteL = !processor.muteL;
+		changeButtonColour(muteL, processor.muteL);
+	}
+
+	if (button == &muteR) {
+		processor.muteR = !processor.muteR;
+		changeButtonColour(muteR, processor.muteR);
 	}
 
 }
 
 void FftbinDelayAudioProcessorEditor::changeButtonColour(TextButton& button, bool condition, bool greenIsTrueOrFalse) {
 	if (condition == greenIsTrueOrFalse) {
+		button.setColour(TextButton::buttonColourId, Colours::green);
+	}
+	else {
+		button.setColour(TextButton::buttonColourId, Colours::black);
+	}
+}
+
+void FftbinDelayAudioProcessorEditor::refreshButtons() {
+	if (processor.transportSource.getLengthInSeconds() <= 0.0) {
+		playStopButton.setEnabled(false);
+	}
+	else {
+		playStopButton.setEnabled(true);
+		openButton.setColour(TextButton::buttonColourId, Colours::green);
+	}
+
+	if (processor.transportSource.isPlaying()) {
+		playStopButton.setButtonText("Stop");
+		openButton.setEnabled(false);
+	}
+	else {
+		playStopButton.setButtonText("Play");
+		openButton.setEnabled(true);
+	}
+
+	if (processor.transportSource.hasStreamFinished()) {
+		processor.transportSource.setPosition(0.0);
+	}
+
+	if (processor.bypass == true) {
+		mainBypass.setColour(TextButton::buttonColourId, Colours::green);
+	}
+	else {
+		mainBypass.setColour(TextButton::buttonColourId, Colours::black);
+	}
+
+	refreshButton(delayRangeButton, processor.delayTime == MainVar::delRangeLong);
+	refreshButton(phaseDelayButton, processor.oFFT[0]->binDelay.phaseInDelay);
+	refreshButton(oFFTBypass, processor.runoFFT);
+	refreshButton(fftBypass, processor.oFFT[0]->runFFTs);
+
+	if (!processor.runoFFT) {
+		fftBypass.setColour(TextButton::ColourIds::buttonColourId, Colours::darkred);
+	}
+	else {
+		refreshButton(fftBypass, processor.oFFT[0]->runFFTs);
+	}
+
+	refreshButton(muteL, processor.muteL);
+	refreshButton(muteR, processor.muteR);
+}
+
+void FftbinDelayAudioProcessorEditor::refreshButton(TextButton& button, bool condition) {
+	if (condition) {
 		button.setColour(TextButton::buttonColourId, Colours::green);
 	}
 	else {
@@ -227,57 +299,6 @@ void FftbinDelayAudioProcessorEditor::phaseInDelayButtonClicked() {
 		processor.oFFT[1]->binDelay.phaseInDelay = true;
 		phaseDelayButton.setButtonText("Phase is in delay");
 		phaseDelayButton.setColour(TextButton::textColourOffId, Colours::white);
-	}
-}
-
-void FftbinDelayAudioProcessorEditor::refreshButtons() {
-	if (processor.transportSource.getLengthInSeconds() <= 0.0) {
-		playStopButton.setEnabled(false);
-	}
-	else {
-		playStopButton.setEnabled(true);
-		openButton.setColour(TextButton::buttonColourId, Colours::green);
-	}
-
-	if (processor.transportSource.isPlaying()) {
-		playStopButton.setButtonText("Stop");
-		openButton.setEnabled(false);
-	}
-	else {
-		playStopButton.setButtonText("Play");
-		openButton.setEnabled(true);
-	}
-
-	if (processor.transportSource.hasStreamFinished()) {
-		processor.transportSource.setPosition(0.0);
-	}
-
-	if (processor.bypass == true) {
-		mainBypass.setColour(TextButton::buttonColourId, Colours::green);
-	}
-	else {
-		mainBypass.setColour(TextButton::buttonColourId, Colours::black);
-	}
-
-	refreshButton(delayRangeButton, processor.delayTime == MainVar::delRangeLong);
-	refreshButton(phaseDelayButton, processor.oFFT[0]->binDelay.phaseInDelay);
-	refreshButton(oFFTBypass, processor.runoFFT);
-	refreshButton(fftBypass, processor.oFFT[0]->runFFTs);
-
-	if (!processor.runoFFT) {
-		fftBypass.setColour(TextButton::ColourIds::buttonColourId, Colours::darkred);
-	}
-	else {
-		refreshButton(fftBypass, processor.oFFT[0]->runFFTs);
-	}
-}
-
-void FftbinDelayAudioProcessorEditor::refreshButton(TextButton& button, bool condition) {
-	if (condition) {
-		button.setColour(TextButton::buttonColourId, Colours::green);
-	}
-	else {
-		button.setColour(TextButton::buttonColourId, Colours::black);
 	}
 }
 

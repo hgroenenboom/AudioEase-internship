@@ -17,9 +17,9 @@ class BinDelay {
 		BinDelay::BinDelay(int sizeInBlocks);
 		void createIndexArray();
 
-		void pushIntoBinDelay(const dsp::Complex<float>* inputFFT);
+		void writeIntoBinDelay(const dsp::Complex<float>* inputFFT);
 		void adjustPointers();
-		void getOutputFromBinDelay(dsp::Complex<float> * writeFFT);
+		void feedbackAndReadFromBinDelay(dsp::Complex<float> * writeFFT);
 
 		void newBufferSize(int sizeinblocks);
 
@@ -35,9 +35,28 @@ class BinDelay {
 		int linInc = MainVar::numBins / 4;
 		int dubLinInc = MainVar::numBins / 2;
 
-		ForwardCircularDelay* delays[MainVar::numBins];
+		ScopedPointer<ForwardCircularDelay> delays[MainVar::numBins];
 		int indexArray[MainVar::numBins];
 		int numBinsArray[MainVar::numBins];
 
-		float feedback = 0.0;
+		float feedback = 0.8;
+
+		// [3.2]
+		void carToPol(float* inReOutM, float* inImOutPhi) {
+			float re = *inReOutM;
+			float im = *inImOutPhi;
+
+			// phytagoras calculation
+			*inReOutM = pow(pow(re, 2.0f) + pow(im, 2.0f), 0.5f);
+			*inImOutPhi = atan2(im, re);
+		}
+
+		// [3.3]
+		void polToCar(float* inMOutRe, float* inPhiOutIm) {
+			float mag = *inMOutRe;
+			float phi = *inPhiOutIm;
+
+			*inMOutRe = mag * cos(phi);
+			*inPhiOutIm = mag * sin(phi);
+		}
 };

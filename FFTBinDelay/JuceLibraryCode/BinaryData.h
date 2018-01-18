@@ -8,8 +8,8 @@
 
 namespace BinaryData
 {
-    extern const char*   bindata;
-    const int            bindataSize = 49152;
+    extern const char*   bindata_bin;
+    const int            bindata_binSize = 49152;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

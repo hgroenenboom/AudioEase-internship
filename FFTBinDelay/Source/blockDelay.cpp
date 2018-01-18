@@ -17,43 +17,43 @@ ForwardCircularDelay::ForwardCircularDelay(int delaySizeInBlocks, int delayinblo
 	setDelayTime(delayInBlocks);
 
 	//Initialize delay pointers:
-	currentPosition = 0;
-	writePointer = 0;
-	readPointer = (-1 * delayInSamples + delayModulo) % delayModulo;
+	currentPos = 0;
+	writePos = 0;
+	readPos = (-1 * delayInSamples + delayModulo) % delayModulo;
 }
 
 ForwardCircularDelay::~ForwardCircularDelay() 
 {
-	free(delayBuffer);
-	DBG("freeing the delayBuffer causes errors");
+	//free(delayBuffer);
+	//DBG("freeing the delayBuffer causes errors");
 }
 
 
 // read a sample offsetted from the read pointer. default reads the current delay sample
 float ForwardCircularDelay::readSample(int index) 
 {
-	return delayBuffer[(readPointer + index + delayModulo) % delayModulo];
+	return delayBuffer[(readPos + index + delayModulo) % delayModulo];
 };
 
 void ForwardCircularDelay::applyFeedback(int index, float feedback) 
 {
-	delayBuffer[(readPointer + index + delayModulo) % delayModulo] *= (feedback * feedbackControl);
+	delayBuffer[(readPos + index + delayModulo) % delayModulo] *= (feedback * feedbackControl);
 }
 
 // write a sample offsetted from the write pointer. default write the current write sample location.
-void ForwardCircularDelay::addSample(float sample, int index) 
+float ForwardCircularDelay::addSample(float sample, int index) 
 {
-	delayBuffer[(writePointer + index + delayModulo) % delayModulo] += sample;
+	return delayBuffer[(writePos + index + delayModulo) % delayModulo] += sample;
 };
 
 // adjust the pointers if a delay callback is complete (if the delay has written and read numSteps times).
 void ForwardCircularDelay::adjustDelayCentre(int numBlocks) 
 {
-	currentPosition += numBlocks * samplesPerBlock;
-	currentPosition %= delayModulo;
+	currentPos += numBlocks * samplesPerBlock;
+	currentPos %= delayModulo;
 
-	writePointer = currentPosition;
-	readPointer = (currentPosition - delayInSamples + delayModulo) % delayModulo;
+	writePos = currentPos;
+	readPos = (currentPos - delayInSamples + delayModulo) % delayModulo;
 }
 
 void ForwardCircularDelay::setDelayTime(float delayinblocks) 
@@ -105,20 +105,20 @@ void ForwardCircularDelay::resizeBuffer(int sizeinblocks)
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////  SPECIFICALLY USED FUNCTIONS //////////////////////////////////////////
 
-// clear data from the delayBuffer by inputting the curPosOffset from the currentPosition
+// clear data from the delayBuffer by inputting the curPosOffset from the currentPos
 void ForwardCircularDelay::clearBufferData(int startOffset, int endOffset) 
 {
 	for (int i = startOffset; i < endOffset; i++) {
-		delayBuffer[(i + currentPosition + delayModulo) % delayModulo] = 0.0f;
+		delayBuffer[(i + currentPos + delayModulo) % delayModulo] = 0.0f;
 	}
 }
 
-// push newInput into the delayBuffer and move writePointer
+// push newInput into the delayBuffer and move writePos
 void ForwardCircularDelay::pushSample(float sample) 
 {
-	delayBuffer[writePointer] = sample;
-	writePointer++;
-	writePointer %= delayModulo;
+	delayBuffer[writePos] = sample;
+	writePos++;
+	writePos %= delayModulo;
 }
 
 void ForwardCircularDelay::sortByTime()
@@ -129,7 +129,7 @@ void ForwardCircularDelay::sortByTime()
 		tempBuffer[i] = delayBuffer[i];
 	}
 
-	int curPosOffset = currentPosition + memsizeInSamples;
+	int curPosOffset = currentPos + memsizeInSamples;
 	for (int i = 0; i < memsizeInSamples; i++) {
 		delayBuffer[i] = tempBuffer[(i - curPosOffset) % memsizeInSamples];
 	}
@@ -148,7 +148,7 @@ float* ForwardCircularDelay::getTimeSortedVersion() const {
 		tempBuffer[i] = delayBuffer[i];
 	}
 
-	int curPosOffset = currentPosition + memsizeInSamples;
+	int curPosOffset = currentPos + memsizeInSamples;
 	for (int i = 0; i < memsizeInSamples; i++) {
 		delayBuffer[i] = tempBuffer[(i - curPosOffset) % memsizeInSamples];
 	}

@@ -21,6 +21,13 @@ public:
     void paint (Graphics&) override;
     void resized() override;
 
+	void buttonInit(TextButton &button, std::string str) {
+		addAndMakeVisible(&button);
+		button.addListener(this);
+		button.setColour(TextButton::buttonColourId, Colours::aliceblue);
+		button.setButtonText(str);
+	}
+
 	// overrided abstract functions
 	void changeListenerCallback(ChangeBroadcaster* source) override;
 	void sliderValueChanged(Slider* slider) override;
@@ -30,7 +37,7 @@ public:
 	void refreshButton(TextButton& button, bool condition);
 
 	void buttonClicked(Button* button) override;
-	void changeButtonColour(TextButton &button, bool condition, bool greenIsTrueOrFals);
+	void changeButtonColour(TextButton &button, bool condition, bool greenIsTrueOrFalse = true);
 	void playButtonClicked();
 	void openButtonClicked();
 	void bypassButtonClicked();
@@ -49,11 +56,11 @@ private:
 	TextButton openButton;
 	TextButton playStopButton;
 	TextButton mainBypass;
-	TextButton oFFTBypass;
-	TextButton fftBypass;
+	TextButton oFFTBypass, fftBypass;
+	TextButton muteL, muteR;
 	TextButton delayRangeButton;
 	TextButton phaseDelayButton;
-	int nButtons = 6;
+	int nButtons = 7;
 
 	Slider feedbackSlider;
 	Slider panSlider;

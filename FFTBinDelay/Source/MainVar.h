@@ -13,10 +13,11 @@
 class MainVar {
 public:
 	enum {
-		fftOrder = 8,
+		fftOrder = 10,
 		fftSize = 1 << fftOrder,
+		samplesForTd = 1 << fftOrder - 2,
 		numBins = 20,
-		numOverlaps = 1 << 3,
+		numOverlaps = 1 << 1,
 		maxDelInSec = 1,
 
 		// delay in overlaps

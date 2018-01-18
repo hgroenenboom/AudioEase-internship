@@ -13,7 +13,7 @@
 class OverlapFFT {
 	public:
 		//OverlapFFT();
-		OverlapFFT(dsp::FFT *fftFunctionP); //the used fft function and the amount of windows.
+		OverlapFFT(); //the used fft function and the amount of windows.
 		~OverlapFFT();
 
 		// [1]
@@ -23,7 +23,7 @@ class OverlapFFT {
 		void runThroughFFTs(); 
 		void fillFFTBuffer(int startIndex, int endIndex); // [2]
 		void applyFFT(int ovLap); // [3]
-		void applyHannningWindowToFftBuffer(); // [3.1]
+		void applyHannningWindowToFftBuffer(bool longOrShort); // [3.1]
 		void carToPol(float* inReOutM, float* inImOutPhi); // [3.2]
 		void polToCar(float* inMOutRe, float* inPhiOutIm); // [3.3]
 		void pushFFTDataIntoOutputDelayBuffer(int startIndex, int endIndex); // [4]
@@ -36,9 +36,20 @@ class OverlapFFT {
 		void setBinDelayWithNewSampleRate(int sampleRate);
 		void createHanningWindow();
 
+		void printComplexArray(dsp::Complex<float> *array, int size = 1024, string str = "");
 
+		void applyHalfHanningWindow() {
+			//for (int i = 0; i < 5; i++) {
+			//	timeData[i]._Val[0] *= (float)i / 5.0f;
+			//}
+			for (int i = MainVar::fftSize / 2; i < MainVar::fftSize; i++) {
+				timeData[i]._Val[0] *= hanningWindowTimes2[i];
+			}
+		}
+			 
 		//GUI variable:
 		bool runFFTs = true;
+
 	private:
 		int //numFFTs = 2,
 			startIndex,
@@ -48,9 +59,9 @@ class OverlapFFT {
 
 
 		// Complexe buffers voor de fft berekeningen
-		dsp::Complex<float> * timeData;
-		dsp::Complex<float> * spectralDataIn;
-		dsp::Complex<float> * spectralDataOut;
+		ScopedPointer<dsp::Complex<float>> timeData;
+		ScopedPointer<dsp::Complex<float>> spectralDataIn;
+		ScopedPointer<dsp::Complex<float>> spectralDataOut;
 
 		// input en ouput memories
 		ForwardCircularDelay outputMemory;
@@ -58,9 +69,10 @@ class OverlapFFT {
 		int inputForFFTCounter = 0;
 
 		std::vector<float> hanningWindow;
+		std::vector<float> hanningWindowTimes2;
 
 		// DE FFT PERFORM FUNCTIE ACCEPTEERT ALLEEN FLOATS
-		dsp::FFT *fftFunctionP;
+		dsp::FFT fftFunction;
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OverlapFFT);
 

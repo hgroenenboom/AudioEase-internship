@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="OxeLyD" name="FFTBinDelay" displaySplashScreen="1" reportAppUsage="1"
-              splashScreenColour="Dark" projectType="audioplug" version="2.7"
+              splashScreenColour="Dark" projectType="audioplug" version="2.7.2"
               bundleIdentifier="com.yourcompany.FFTBinDelay" includeBinaryInAppConfig="1"
               cppLanguageStandard="11" companyCopyright="GreenSounds" buildVST="1"
               buildVST3="0" buildAU="1" buildAUv3="0" buildRTAS="0" buildAAX="0"
@@ -36,7 +36,7 @@
             file="Source/BineuralData.cpp"/>
       <FILE id="Sa1FSi" name="BineuralData.h" compile="0" resource="0" file="Source/BineuralData.h"/>
     </GROUP>
-    <FILE id="UQUju4" name="bindata" compile="0" resource="1" file="Source/bindata"/>
+    <FILE id="UQUju4" name="bindata.bin" compile="0" resource="1" file="Source/bindata.bin"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <VS2017 targetFolder="Builds/VisualStudio2017" windowsTargetPlatformVersion="10.0.16299.0">
