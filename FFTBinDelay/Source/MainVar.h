@@ -15,13 +15,13 @@ public:
 	enum {
 		fftOrder = 10,
 		fftSize = 1 << fftOrder,
-		samplesForTd = 1 << fftOrder - 2,
+		tdSize = 1 << (fftOrder - 2),
 		numBins = 20,
 		numOverlaps = 1 << 1,
 		maxDelInSec = 1,
 
 		// delay in overlaps
-		delRangeShort = 100,
-		delRangeLong = 1000
+		delRangeShort = MainVar::numOverlaps * (44100 / MainVar::fftSize) * MainVar::maxDelInSec / 2,
+		delRangeLong = MainVar::numOverlaps * (44100 / MainVar::fftSize) * MainVar::maxDelInSec * 2
 	};
 };

@@ -61,8 +61,8 @@ class ForwardCircularDelay {
 			return &delayBuffer[(readPos + offset + delayModulo) % delayModulo];
 		}
 
-		void applyFeedbackOnWritePos(float feedback, int offset = 0) {
-			delayBuffer[(writePos + offset + delayModulo) % delayModulo] *= (feedback *feedbackControl);
+		void applyFeedbackOnWritePos(float fdback, int offset = 0) {
+			delayBuffer[(writePos + offset + delayModulo) % delayModulo] *= (fdback *feedbackControl);
 		}
 
 		float* getWriteSampleAdress(int index = 0) {

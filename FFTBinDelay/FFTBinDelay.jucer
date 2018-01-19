@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="OxeLyD" name="FFTBinDelay" displaySplashScreen="1" reportAppUsage="1"
-              splashScreenColour="Dark" projectType="audioplug" version="2.7.2"
+              splashScreenColour="Dark" projectType="audioplug" version="2.7.2.2"
               bundleIdentifier="com.yourcompany.FFTBinDelay" includeBinaryInAppConfig="1"
               cppLanguageStandard="11" companyCopyright="GreenSounds" buildVST="1"
               buildVST3="0" buildAU="1" buildAUv3="0" buildRTAS="0" buildAAX="0"

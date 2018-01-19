@@ -40,15 +40,16 @@ class OverlapFFT {
 
 		void applyHalfHanningWindow() {
 			//for (int i = 0; i < 5; i++) {
-			//	timeData[i]._Val[0] *= (float)i / 5.0f;
+			//	timeBuffer[i]._Val[0] *= (float)i / 5.0f;
 			//}
 			for (int i = MainVar::fftSize / 2; i < MainVar::fftSize; i++) {
-				timeData[i]._Val[0] *= hanningWindowTimes2[i];
+				timeBuffer[i]._Val[0] *= hanningWindowTimes2[i];
 			}
 		}
 			 
 		//GUI variable:
 		bool runFFTs = true;
+		float dryWet = 1.0f;
 
 	private:
 		int //numFFTs = 2,
@@ -59,9 +60,9 @@ class OverlapFFT {
 
 
 		// Complexe buffers voor de fft berekeningen
-		ScopedPointer<dsp::Complex<float>> timeData;
-		ScopedPointer<dsp::Complex<float>> spectralDataIn;
-		ScopedPointer<dsp::Complex<float>> spectralDataOut;
+		ScopedPointer<dsp::Complex<float>> timeBuffer;
+		ScopedPointer<dsp::Complex<float>> spectralInBuffer;
+		ScopedPointer<dsp::Complex<float>> spectralOutBuffer;
 
 		// input en ouput memories
 		ForwardCircularDelay outputMemory;

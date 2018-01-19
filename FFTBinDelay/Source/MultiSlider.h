@@ -14,7 +14,7 @@ public:
 	virtual void mouseExit(const MouseEvent& event) override;
 	virtual void mouseDrag(const MouseEvent& event) override;
 	virtual void mouseDown(const MouseEvent& event) override;
-	void reactToMouseValues(const MouseEvent& event);
+	void reactToMouseValues(const MouseEvent& event, bool isMouseDragging);
 
 	void setBinDelayTimeValue(int index, float value);
 	const float* getSliderValues() const;
@@ -29,5 +29,9 @@ private:
 	// amount of sliders, value is changeble. Needs to be changed in binDelay too.
 
 	float delaySliderValues[MainVar::numBins];
-	int newPos;
+	int newPos = 0;
+
+	int x = 0, xOld = 0;
+	int y, yOld = 0;
+	int difference = 0;
 };

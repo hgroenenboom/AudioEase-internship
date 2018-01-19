@@ -39,7 +39,7 @@ class BinDelay {
 		int indexArray[MainVar::numBins];
 		int numBinsArray[MainVar::numBins];
 
-		float feedback = 0.8;
+		float feedback = 0.8f;
 
 		// [3.2]
 		void carToPol(float* inReOutM, float* inImOutPhi) {

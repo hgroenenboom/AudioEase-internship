@@ -66,10 +66,14 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	panSlider.addListener(this);
 	panSlider.setRange(0.0, 0.99999, 0.001);
 
+	addAndMakeVisible(&dryWetSlider);
+	dryWetSlider.addListener(this);
+	dryWetSlider.setRange(0.0, 1.0, 0.001);
+
 	refreshButtons();
 	refreshSliders();
 
-	setSize(700, 600);
+	setSize(800, 800);
 
 	processor.transportSource.addChangeListener(this);   // zorgt ervoor dat elke change in transportSource de listener functie acti
 }
@@ -86,8 +90,7 @@ void FftbinDelayAudioProcessorEditor::paint (Graphics& g)
 
     g.setColour (Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("2.7.2 Rebuild oFFT using my knowledge about convolution, and how feedback and bindelays result in a complex convolution. Larger buffers are now used.
-    Next focus is convolution", getLocalBounds(), Justification::bottomRight, 1);
+    g.drawFittedText ("2.7.2.2 Rebuild oFFT again. The lower bins modifications create too long IR's. Fixed to do's and added dry wet slider. Next focus is convolution", getLocalBounds(), Justification::bottomRight, 1);
 }
 
 void FftbinDelayAudioProcessorEditor::resized()
@@ -101,7 +104,7 @@ void FftbinDelayAudioProcessorEditor::resized()
 	mainBypass.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 
 	auto spaceForFFTBypass = topHeader.removeFromLeft(getWidth() / nButtons);
-	oFFTBypass.setBounds(spaceForFFTBypass.removeFromTop(topHeaderSize  - topHeaderSize / 2.5));
+	oFFTBypass.setBounds(spaceForFFTBypass.removeFromTop(topHeaderSize  - (int)(topHeaderSize / 2.5f) ));
 	fftBypass.setBounds(spaceForFFTBypass);
 	
 	auto spaceForMuteChan = topHeader.removeFromLeft(getWidth() / nButtons);
@@ -113,11 +116,12 @@ void FftbinDelayAudioProcessorEditor::resized()
 
 
 
-	auto midHeader = space.removeFromTop(50);
-	feedbackSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 2) );
-	panSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight()));
+	auto midHeader = space.removeFromTop(150);
+	feedbackSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 3) );
+	panSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 2));
+	dryWetSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight()));
 
-	space.reduce(50, 50);
+	space.reduce(40, 40);
 	delaySliders.setBounds(space);
 }
 
@@ -315,18 +319,23 @@ void FftbinDelayAudioProcessorEditor::sliderValueChanged(Slider* slider) {
 	}
 
 	if (slider == &panSlider) {
-		float pan = panSlider.getValue();
-		processor.setPanValue(pan);
+		processor.setPanValue( (float)panSlider.getValue());
+	}
+
+	if (slider == &dryWetSlider) {
+		processor.oFFT[0]->dryWet = (float)dryWetSlider.getValue();
+		processor.oFFT[1]->dryWet = (float)dryWetSlider.getValue();
 	}
 }
 
 void FftbinDelayAudioProcessorEditor::newFeedbackSliderValue() {
-	processor.setFeedbackValue( feedbackSlider.getValue());
+	processor.setFeedbackValue( (float)feedbackSlider.getValue());
 };
 
 void FftbinDelayAudioProcessorEditor::refreshSliders() {
 	feedbackSlider.setValue( processor.getFeedbackValue());
 	delaySliders.refreshGUIValues(processor.getBinDelayArray());
 	panSlider.setValue(processor.getPanValue());
+	dryWetSlider.setValue( processor.oFFT[0]->dryWet);
 };
 

@@ -64,6 +64,7 @@ private:
 
 	Slider feedbackSlider;
 	Slider panSlider;
+	Slider dryWetSlider;
 	MultiSlider delaySliders;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FftbinDelayAudioProcessorEditor)

@@ -11,10 +11,10 @@ ForwardCircularDelay::ForwardCircularDelay(int delaySizeInBlocks, int delayinblo
 	//initialize buffersize
 	delayBuffer = (float *) malloc(sizeof(float) * (memsizeInSamples + samplesPerBlock) );
 	//zerofill buffer
-	memset(delayBuffer, 0.0, (memsizeInSamples + samplesPerBlock) * sizeof(float));
+	memset(delayBuffer, 0, (memsizeInSamples + samplesPerBlock) * sizeof(float));
 	DBG("allocated buffer: ");
 	//Initialize delay parameters:
-	setDelayTime(delayInBlocks);
+	setDelayTime( (float)delayInBlocks);
 
 	//Initialize delay pointers:
 	currentPos = 0;
@@ -35,9 +35,9 @@ float ForwardCircularDelay::readSample(int index)
 	return delayBuffer[(readPos + index + delayModulo) % delayModulo];
 };
 
-void ForwardCircularDelay::applyFeedback(int index, float feedback) 
+void ForwardCircularDelay::applyFeedback(int index, float fdback) 
 {
-	delayBuffer[(readPos + index + delayModulo) % delayModulo] *= (feedback * feedbackControl);
+	delayBuffer[(readPos + index + delayModulo) % delayModulo] *= (fdback * feedbackControl);
 }
 
 // write a sample offsetted from the write pointer. default write the current write sample location.
@@ -91,11 +91,11 @@ void ForwardCircularDelay::resizeBuffer(int sizeinblocks)
 	{
 		free(delayBuffer);
 
-		int MEMSIZE = sizeinblocks * samplesPerBlock;
+		//int MEMSIZE = sizeinblocks * samplesPerBlock;
 		//initialize buffersize
 		delayBuffer = (float *)malloc(sizeof(float) * sizeinblocks);
 		//zerofill buffer
-		memset(delayBuffer, 0.0, sizeinblocks * sizeof(float));
+		memset(delayBuffer, 0., sizeinblocks * sizeof(float));
 		//DBG("allocated new buffer to delayBuffer");
 	}
 }
@@ -177,7 +177,7 @@ int ForwardCircularDelay::getMemSize() const
 
 void ForwardCircularDelay::pushData(float* data, int dataLength)
 {
-	for (int i; i < dataLength; i++) {
+	for (int i = 0; i < dataLength; i++) {
 		pushSample(data[i]);
 	}
 }

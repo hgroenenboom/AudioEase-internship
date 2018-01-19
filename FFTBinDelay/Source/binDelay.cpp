@@ -24,13 +24,13 @@ void BinDelay::createIndexArray() {
 		if (i >= dubLinInc)
 			indexArray[i] = (int)(dubLinInc - linInc) * 2 + linInc //add start value + 15
 				+ (i - dubLinInc) * 2 //add two for every index + 0 tot 40
-				+ pow((i - dubLinInc) / (float) ((MainVar::numBins) - dubLinInc) , 7.0f) // exponential increase from 0-1
-				* (0.5*MainVar::fftSize - indexArray[dubLinInc] - ((MainVar::numBins) - dubLinInc) * 2); // 
+				+ (int) (pow((i - dubLinInc) / (float) ((MainVar::numBins) - dubLinInc) , 7.0f) // exponential increase from 0-1
+				* (MainVar::fftSize / 2 - indexArray[dubLinInc] - ((MainVar::numBins) - dubLinInc) * 2)); // 
 	}
 
 	for (int i = 0; i < MainVar::numBins; i++) {
 		if (i == MainVar::numBins - 1) {
-			numBinsArray[i] = 0.5*MainVar::fftSize - 1 - indexArray[i];
+			numBinsArray[i] = MainVar::fftSize / 2 - 1 - indexArray[i];
 		}
 		else {
 			numBinsArray[i] = indexArray[i + 1] - indexArray[i];
