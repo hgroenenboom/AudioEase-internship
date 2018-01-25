@@ -8,25 +8,49 @@
   ==============================================================================
 */
 
-#include "PluginProcessor.h"
+//#include "PluginProcessor.h"
 #include "PluginEditor.h"
 
 
 //==============================================================================
-FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAudioProcessor& p)
-    : AudioProcessorEditor (&p), processor (p)
-	, delaySliders(p)
+FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor(FftbinDelayAudioProcessor& p)
+	: AudioProcessorEditor(&p), processor(p)
+	, delaySliders(p, "delay\ntime\n")
+	, panSliders(p, "panning", true)
+	, ampSliders(p, "amplitudes")
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
+	startTimer(30);
 
-	//setSize(600, 400);
-
+	delayF = [=](int a, float b) { this->processor.setBinDelayTime(a, b); };
 	addAndMakeVisible(&delaySliders);
+	delaySliders.setFunction(delayF);
+	addAndMakeVisible(&delayLabel);
+	delayLabel.setText("Delay time\n(s)", dontSendNotification);
+	delayLabel.attachToComponent(&delaySliders, true);
+	delayLabel.setJustificationType(Justification::centred);
+
+	panF = [=](int a, float b) { this->processor.setPanValues(a, b); };
+	addAndMakeVisible(&panSliders);
+	panSliders.setFunction(panF);
+	addAndMakeVisible(&autopanLabel);
+	autopanLabel.setText("Autopan speed\n", dontSendNotification);
+	autopanLabel.attachToComponent(&panSliders, true);
+	autopanLabel.setJustificationType(Justification::centred);
+
+	ampF = [=](int a, float b) { this->processor.setBinDelayAmps(a, b); };
+	addAndMakeVisible(&ampSliders);
+	ampSliders.setFunction(ampF);
+	addAndMakeVisible(&ampSliders);
+	ampLabel.setText("Amplitude\nsliders", dontSendNotification);
+	ampLabel.attachToComponent(&ampSliders, true);
+	ampLabel.setJustificationType(Justification::centred);
 
 	addAndMakeVisible(&openButton);
 	openButton.setButtonText("Open...");
 	openButton.addListener(this);
+	buttonInit(micOnButton, "Mic On");
 
 	addAndMakeVisible(&playStopButton);
 	playStopButton.setButtonText("Play");
@@ -37,6 +61,9 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	addAndMakeVisible(&feedbackSlider);
 	feedbackSlider.addListener(this);
 	feedbackSlider.setRange(0.0, 1.0, 0.001);
+	addAndMakeVisible(&feedbackLabel);
+	feedbackLabel.setText("Feedback", dontSendNotification);
+	feedbackLabel.attachToComponent(&feedbackSlider, true);
 
 	addAndMakeVisible(&mainBypass);
 	mainBypass.addListener(this);
@@ -48,7 +75,7 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 
 	addAndMakeVisible(&phaseDelayButton);
 	phaseDelayButton.addListener(this);
-	phaseDelayButton.setButtonText("Delay phase");
+	phaseDelayButton.setButtonText("Not Used");
 
 	addAndMakeVisible(&oFFTBypass);
 	oFFTBypass.addListener(this);
@@ -65,15 +92,21 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor (FftbinDelayAud
 	addAndMakeVisible(&panSlider);
 	panSlider.addListener(this);
 	panSlider.setRange(0.0, 0.99999, 0.001);
+	addAndMakeVisible(&panLabel);
+	panLabel.setText("Not Used", dontSendNotification);
+	panLabel.attachToComponent(&panSlider, true);
 
 	addAndMakeVisible(&dryWetSlider);
 	dryWetSlider.addListener(this);
 	dryWetSlider.setRange(0.0, 1.0, 0.001);
+	addAndMakeVisible(&dryWetLabel);
+	dryWetLabel.setText("WetDry", dontSendNotification);
+	dryWetLabel.attachToComponent(&dryWetSlider, true);
 
 	refreshButtons();
 	refreshSliders();
 
-	setSize(800, 800);
+	setSize(600, 600);
 
 	processor.transportSource.addChangeListener(this);   // zorgt ervoor dat elke change in transportSource de listener functie acti
 }
@@ -99,30 +132,51 @@ void FftbinDelayAudioProcessorEditor::resized()
 
 	int topHeaderSize = 80;
 	auto topHeader = space.removeFromTop(topHeaderSize);
-	openButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
-	playStopButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
-	mainBypass.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
-
-	auto spaceForFFTBypass = topHeader.removeFromLeft(getWidth() / nButtons);
-	oFFTBypass.setBounds(spaceForFFTBypass.removeFromTop(topHeaderSize  - (int)(topHeaderSize / 2.5f) ));
-	fftBypass.setBounds(spaceForFFTBypass);
-	
-	auto spaceForMuteChan = topHeader.removeFromLeft(getWidth() / nButtons);
-	muteL.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize / 2));
-	muteR.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize));
-
-	delayRangeButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
-	phaseDelayButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
-
-
+		auto micOpenSpace = topHeader.removeFromLeft(getWidth() / nButtons);
+			openButton.setBounds( micOpenSpace.removeFromTop(micOpenSpace.getHeight() / 2) );
+			micOnButton.setBounds(micOpenSpace);
+		playStopButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+		mainBypass.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+		auto spaceForFFTBypass = topHeader.removeFromLeft(getWidth() / nButtons);
+			oFFTBypass.setBounds(spaceForFFTBypass.removeFromTop(topHeaderSize  - (int)(topHeaderSize / 2.5f) ));
+			fftBypass.setBounds(spaceForFFTBypass);
+		auto spaceForMuteChan = topHeader.removeFromLeft(getWidth() / nButtons);
+			muteL.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize / 2));
+			muteR.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize));
+		delayRangeButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+		phaseDelayButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 
 	auto midHeader = space.removeFromTop(150);
-	feedbackSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 3) );
-	panSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 2));
-	dryWetSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight()));
+		feedbackSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 3).removeFromRight(getWidth() - 80) );
+		panSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 2).removeFromRight(getWidth() - 80));
+		dryWetSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight()).removeFromRight(getWidth() - 80));
 
 	space.reduce(40, 40);
-	delaySliders.setBounds(space);
+	space.removeFromLeft(100);
+		int numMSliders = 3;
+		int remFromTop = (int) (space.getHeight() / (numMSliders + (float)numMSliders * 0.1f));
+		int spce = (int)(space.getHeight() * ((0.2f) / (numMSliders + (float)numMSliders * 0.1f)) );
+		delaySliders.setBounds(space.removeFromTop(remFromTop) );
+		space.removeFromTop(spce);
+		panSliders.setBounds(space.removeFromTop(remFromTop) );
+		space.removeFromTop(spce);
+		ampSliders.setBounds(space.removeFromTop(remFromTop));
+}
+
+void FftbinDelayAudioProcessorEditor::timerCallback()  
+{ 
+	dryWetSlider.setValue(*par::dryWet, dontSendNotification);
+	feedbackSlider.setValue(*par::feedBack, dontSendNotification);
+	refreshSliders();
+}
+
+
+
+void FftbinDelayAudioProcessorEditor::buttonInit(TextButton &button, std::string str) {
+	addAndMakeVisible(&button);
+	button.addListener(this);
+	button.setColour(TextButton::buttonColourId, Colours::aliceblue);
+	button.setButtonText(str);
 }
 
 // callback when something changes in the processor.
@@ -131,7 +185,7 @@ void FftbinDelayAudioProcessorEditor::changeListenerCallback(ChangeBroadcaster* 
 	if (source == &processor.transportSource) {
 		refreshButtons();
 		refreshSliders();
-	}
+	}	
 }
 
 // the overrided abstract button clicked function. Called when a button is clicked.
@@ -139,6 +193,18 @@ void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
 {
 	if (button == &openButton) {
 		openButtonClicked();
+	}
+	if (button == &micOnButton) {
+		processor.micOn = !processor.micOn;
+		changeButtonColour(micOnButton, processor.micOn, true);
+		if (processor.micOn) {
+			openButton.setColour(TextButton::ColourIds::buttonColourId, Colours::darkred);
+			openButton.setEnabled(false);
+		}
+		else {
+			changeButtonColour(openButton, processor.transportSource.isPlaying(), true);
+			openButton.setEnabled(true);
+		}
 	}
 	if (button == &playStopButton) {
 		playButtonClicked();
@@ -229,6 +295,7 @@ void FftbinDelayAudioProcessorEditor::refreshButtons() {
 	refreshButton(phaseDelayButton, processor.oFFT[0]->binDelay.phaseInDelay);
 	refreshButton(oFFTBypass, processor.runoFFT);
 	refreshButton(fftBypass, processor.oFFT[0]->runFFTs);
+	refreshButton(micOnButton, processor.micOn);
 
 	if (!processor.runoFFT) {
 		fftBypass.setColour(TextButton::ColourIds::buttonColourId, Colours::darkred);
@@ -320,22 +387,28 @@ void FftbinDelayAudioProcessorEditor::sliderValueChanged(Slider* slider) {
 
 	if (slider == &panSlider) {
 		processor.setPanValue( (float)panSlider.getValue());
+		processor.oFFT[0]->pan = (float)panSlider.getValue();
+		processor.oFFT[1]->pan = (float)panSlider.getValue();
 	}
 
 	if (slider == &dryWetSlider) {
-		processor.oFFT[0]->dryWet = (float)dryWetSlider.getValue();
-		processor.oFFT[1]->dryWet = (float)dryWetSlider.getValue();
+		//processor.oFFT[0]->dryWet = (float)dryWetSlider.getValue();
+		par::dryWet->setValueNotifyingHost( (float)dryWetSlider.getValue());
+		//processor.oFFT[1]->dryWet = (float)dryWetSlider.getValue();
 	}
 }
 
 void FftbinDelayAudioProcessorEditor::newFeedbackSliderValue() {
-	processor.setFeedbackValue( (float)feedbackSlider.getValue());
+	//processor.setFeedbackValue( (float)feedbackSlider.getValue());
+	par::feedBack->setValueNotifyingHost((float)feedbackSlider.getValue());
 };
 
 void FftbinDelayAudioProcessorEditor::refreshSliders() {
-	feedbackSlider.setValue( processor.getFeedbackValue());
+	feedbackSlider.setValue( *par::feedBack);
 	delaySliders.refreshGUIValues(processor.getBinDelayArray());
+	panSliders.refreshGUIValues(processor.getPanValues());
+	ampSliders.refreshGUIValues(par::ampArray);
 	panSlider.setValue(processor.getPanValue());
-	dryWetSlider.setValue( processor.oFFT[0]->dryWet);
+	dryWetSlider.setValue( *par::dryWet);
 };
 

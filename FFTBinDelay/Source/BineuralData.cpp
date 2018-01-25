@@ -13,12 +13,20 @@
 float* BinauralData::readBinData(string path, int binSize) {
 	DBG("Reading bindata...");
 
-	binData = new float[datalength / sizeof(float)];
-	
-	char * temp = (char*)binData.get();
-	for (int i = 0; i < datalength / sizeof(float); i++) {
+	tDbinData = new float[tDdatalength / sizeof(float)];
+	fDbinData = new float[BinaryData::fdBinauralData_binSize / sizeof(float)];
+
+	char * temp = (char*)tDbinData.get();
+	for (int i = 0; i < tDdatalength / sizeof(float); i++) {
 		for (int c = 0; c < sizeof(float); c++) {
 			temp[i * sizeof(float) + c] = charBuffer[i * sizeof(float) + c];
+		}
+	}
+
+	char * temp2 = (char*)fDbinData.get();
+	for (int i = 0; i < fDdatalength / sizeof(float); i++) { // loop door de hoeveelheid float waardes
+		for (int c = 0; c < sizeof(float); c++) { // loop through the individual chars
+			temp2[i * sizeof(float) + c] = BinaryData::fdBinauralData_bin[i * sizeof(float) + c];
 		}
 	}
 
@@ -32,10 +40,10 @@ float* BinauralData::readBinData(string path, int binSize) {
 			else {
 				chan = 'R';
 			}
-			//printArray(binData, datalength / sizeof(float), startIndex + binSize, startIndex, to_string(i * 15) + chan + " \t = ");
-			//DBG("Length = " << datalength << " and startIndex = " << startIndex);
+			//printArray(tDbinData, tDdatalength / sizeof(float), startIndex + binSize, startIndex, to_string(i * 15) + chan + " \t = ");
+			//DBG("Length = " << tDdatalength << " and startIndex = " << startIndex);
 		}
 	}
 
-	return binData;
+	return tDbinData;
 }

@@ -31,6 +31,11 @@ class ForwardCircularDelay {
 		float addSample(float value, int index = 0);
 		// adjust the pointers after the delay has received the expected amount of samples.
 		void adjustDelayCentre(int numSteps = 1);
+
+		// Voor de duidelijkhied over default values:
+		//void adjustDelayCentre();
+		//void adjustDelayCentre(int numSteps);
+
 		// setDelayTime;
 		void setDelayTime(float delayTime);
 
@@ -91,4 +96,56 @@ class ForwardCircularDelay {
 		int readPos = 0;
 		int writePos = 0;
 
+};
+
+class Fade {
+public:
+
+	void initFade(float *oldval, float targetVal, int numcalculations) {
+		if (*oldval != targetVal) {
+			startValue = *oldval;
+			endValue = targetVal;
+			numCalculations = numcalculations;
+			increment = (endValue - startValue) / (float)numCalculations;
+			count = 0;
+			value = oldval;
+			isRunning = true;
+			isActive = true;
+		}
+		else {
+			isActive = false;
+		}
+	}
+
+	void reinit() {
+		if (isActive) {
+			count = 0;
+			*value = startValue;
+			isRunning = true;
+		}
+	}
+
+	void fade() {
+		if (isRunning) {
+			*value += increment;
+			count++;
+			if (count == numCalculations) {
+				*value = endValue;
+				count = 0;
+				isRunning = false;
+			}
+		}
+		else {
+			//DBG("Fade is not active.");
+		}
+	}
+
+	float startValue = 0.0f
+		, endValue = 0.0f
+		, increment = 0.0f;
+	float* value = nullptr;
+	int numCalculations = 0;
+	int count = 0;
+	bool isRunning = false,
+		isActive = false;
 };

@@ -6,8 +6,9 @@
 //	: binDelay() {
 //}
 
-OverlapFFT::OverlapFFT()
-	: binDelay(MainVar::numOverlaps * (44100 / MainVar::fftSize) * MainVar::maxDelInSec),
+OverlapFFT::OverlapFFT(int chan)
+	: channel(chan),
+	binDelay(MainVar::numOverlaps * (44100 / MainVar::fftSize) * MainVar::maxDelInSec, chan),
 	inputMemory(30 * MainVar::tdSize, MainVar::tdSize, true, 1),
 	outputMemory(30 * MainVar::tdSize, MainVar::tdSize, true, 1),
 	fftFunction(MainVar::fftOrder)
@@ -36,6 +37,7 @@ void OverlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int
 	const float* channelData = buffer.getReadPointer(chan, 0);
 	float* outBuffer = buffer.getWritePointer(chan, 0);
 	this->channel = chan;
+	dryWetFade.initFade(&dryWet, *par::dryWet, numSamples);
 
 	for (int i = 0; i < numSamples; i++) {
 		// [1]
@@ -52,7 +54,12 @@ void OverlapFFT::pushDataIntoMemoryAndPerformFFTs(AudioSampleBuffer& buffer, int
 			adjustMemoryPointersAndClearOutputMemory(); // [6,7]
 		}
 
+		// hier staat de latency feitelijk ook in beschreven
+		//dryWet = (*par::dryWet + oldDryWet) * 0.5f;
 		outBuffer[i] = inputMemory.readSample(inputForFFTCounter - 1.5f * MainVar::tdSize) * dryWet + (1.0f - dryWet) * getOutputData() * (1.0f / (MainVar::numOverlaps / 2));
+		//oldDryWet = dryWet;
+
+		dryWetFade.fade();
 	}
 }
 
@@ -119,21 +126,37 @@ void OverlapFFT::applyFFT(int ovLap) {
 
 		//MODIFICATIONS
 		
+
 		////IFFT
 		
 		// BinDelay
 		// Because it uses cyclical buffers, the read and write pointers point to the same values. This is why the order of operations is very important.
 		// Correct order of operations: feedback -> read -> write -> adjustpointers.
-		binDelay.feedbackAndReadFromBinDelay(spectralOutBuffer);
-		binDelay.writeIntoBinDelay(spectralInBuffer);
+		binDelay.feedbackAndReadFromBinDelay(spectralOutBuffer); //mag,phase
+		binDelay.writeIntoBinDelay(spectralInBuffer); //re, im
 		binDelay.adjustPointers();
+
+		
+		for (int i = 0; i < MainVar::fftSize / 2; i++) {
+			//dsp::Complex<float> temp[MainVar::fftSize];
+			//memcpy(temp, spectralOutBuffer, MainVar::fftSize / 2 * sizeof(dsp::Complex<float>));
+			//spectralOutBuffer[i]._Val[0] = interpolateWithNearMags(i, 3, temp);
+			//carToPol(&spectralOutBuffer[i]._Val[0], &spectralOutBuffer[i]._Val[1]);
+
+			//spectralOutBuffer[i]._Val[0] *= bindata.fDbinData[(int)(pan*24.0f) * 2*MainVar::fftSize
+			//	+ channel*MainVar::fftSize + i * 2];
+			//spectralOutBuffer[i]._Val[1] += bindata.fDbinData[(int)(pan*24.0f) * 2*MainVar::fftSize
+			//	+ channel*MainVar::fftSize + i * 2 + 1];
+
+			polToCar(&spectralOutBuffer[i]._Val[0], &spectralOutBuffer[i]._Val[1]);
+		} 
 
 		int center = 40;
 		int range = 30;
-
 		// create the complex conjugates
 		for (int i = 0; i < MainVar::fftSize/2; i++) {
-			/* if (true) {
+			/*
+			if (true) {
 				carToPol(&spectralOutBuffer[i]._Val[0], &spectralOutBuffer[i]._Val[1]);
 				if (i > (center - range) && i < center + range) {
 					float temp = (float)(int)(abs(center - i)) / (float)range;
@@ -154,13 +177,13 @@ void OverlapFFT::applyFFT(int ovLap) {
 
 			spectralOutBuffer[min(MainVar::fftSize - 1, MainVar::fftSize-1 - i)]._Val[0] = spectralOutBuffer[i]._Val[0];
 			spectralOutBuffer[min(MainVar::fftSize - 1, MainVar::fftSize-1 - i)]._Val[1] = - spectralOutBuffer[i]._Val[1];
-		}
+		} 
 
 		// zero fill the other values
 		//printComplexArray(spectralOutBuffer, 1024);
 
-		//spectralOutBuffer[0]._Val[0] = 0.0f;
-		//spectralOutBuffer[MainVar::fftSize-1]._Val[0] = 0.0f;
+		spectralOutBuffer[0]._Val[0] = 0.0f;
+		spectralOutBuffer[MainVar::fftSize-1]._Val[0] = 0.0f;
 
 		fftFunction.perform(spectralOutBuffer, timeBuffer, true);	
 
@@ -187,7 +210,8 @@ void OverlapFFT::applyFFT(int ovLap) {
 	
 
 	//printComplexArray(timeBuffer, 1024);
-
+	count += 0.01f;
+	if (count >= 12.0f) count = 0.0f;
 }
 
 // [3.1]

@@ -11,7 +11,8 @@
 class FftbinDelayAudioProcessorEditor  : public AudioProcessorEditor
 										, public ChangeListener
 										, public Button::Listener
-										, public Slider::Listener
+										, public Slider::Listener,
+	private Timer
 {
 public:
     FftbinDelayAudioProcessorEditor (FftbinDelayAudioProcessor&);
@@ -20,13 +21,9 @@ public:
     //==============================================================================
     void paint (Graphics&) override;
     void resized() override;
+	void timerCallback() override;
 
-	void buttonInit(TextButton &button, std::string str) {
-		addAndMakeVisible(&button);
-		button.addListener(this);
-		button.setColour(TextButton::buttonColourId, Colours::aliceblue);
-		button.setButtonText(str);
-	}
+	void buttonInit(TextButton &button, std::string str);
 
 	// overrided abstract functions
 	void changeListenerCallback(ChangeBroadcaster* source) override;
@@ -44,6 +41,16 @@ public:
 	void rangeButtonClicked();
 	void phaseInDelayButtonClicked();
 
+	//void multiSliderValueChanged(MultiSlider &m, int index, float value) {
+	//	if (&m == &delaySliders) {
+	//		processor.setBinDelayTime(index, value);
+	//		DBG("lol slider");
+	//	}
+	//	else if (&m == &panSliders) {
+	//
+	//	}
+	//}
+
 	// slider functions
 	void newFeedbackSliderValue();
 	void refreshSliders();
@@ -52,8 +59,10 @@ private:
 	// This reference is provided as a quick way for your editor to
 	// access the processor object that created it.
 	FftbinDelayAudioProcessor& processor;
+	//AudioProcessorValueTreeState processorState;
 
 	TextButton openButton;
+	TextButton micOnButton;
 	TextButton playStopButton;
 	TextButton mainBypass;
 	TextButton oFFTBypass, fftBypass;
@@ -63,9 +72,21 @@ private:
 	int nButtons = 7;
 
 	Slider feedbackSlider;
+	Label feedbackLabel;
 	Slider panSlider;
+	Label panLabel;
 	Slider dryWetSlider;
+	Label dryWetLabel;
+
 	MultiSlider delaySliders;
+	std::function<void(int, float)> delayF = nullptr;
+	Label delayLabel;
+	MultiSlider panSliders;
+	std::function<void(int, float)> panF = nullptr;
+	Label autopanLabel;
+	MultiSlider ampSliders;
+	std::function<void(int, float)> ampF = nullptr;
+	Label ampLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FftbinDelayAudioProcessorEditor)
 };

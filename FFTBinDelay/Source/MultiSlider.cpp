@@ -1,24 +1,46 @@
 
 #include "MultiSlider.h"
 
-MultiSlider::MultiSlider(FftbinDelayAudioProcessor& p)
-	: processor(p)
+MultiSlider::MultiSlider(FftbinDelayAudioProcessor& p, string strng, bool gridOn)
+	: processor(p),
+	grid(gridOn)
 {
 	// Init delay values
-	for (int i = 0; i < MainVar::numBins; i++) {
-		delaySliderValues[i] = 1.0;
+	for (int i = 0; i < MainVar::numBands; i++) {
+		sliderValues[i] = 1.0;
 	}
+
+	if (strng != "") {
+		addAndMakeVisible(&label);
+		label.setText(strng, dontSendNotification);
+		//label.attachToComponent(this, left);
+	}
+
+	
 }
 
 void MultiSlider::paint(Graphics& g) {
+	ss = getLocalBounds();
+	//s = ss.removeFromLeft(50);
+	//ss.reduce(10, 10); 
+	
 	g.setColour(Colours::grey);
-	g.drawRect(getLocalBounds());
+	g.drawRect(ss);
+
+	if (grid == true) {
+		g.setColour(Colours::yellow.withAlpha(0.33f));
+		g.fillRect(0, ss.getHeight() / 2, ss.getWidth(), 1);
+		g.setColour(Colours::yellow.withAlpha(0.05f));
+		for (int i = 0; i < 10; i++) {
+			g.fillRect(0, ss.getHeight() / 10 * i, ss.getWidth(), 1);
+		}
+	}
 
 	g.setColour(Colours::white);
-	for (int i = 0; i < MainVar::numBins; i++) {
-		g.drawRect(i * (getWidth() / MainVar::numBins)
-			, (int) (delaySliderValues[i] * getHeight())
-			, getWidth() / MainVar::numBins
+	for (int i = 0; i < MainVar::numBands; i++) {
+		g.drawRect(i * (ss.getWidth() / MainVar::numBands)
+			, (int) (sliderValues[i] * ss.getHeight())
+			, ss.getWidth() / MainVar::numBands
 			, 1);
 	}
 };
@@ -44,12 +66,12 @@ void MultiSlider::mouseDown(const MouseEvent& event) {
 
 void MultiSlider::reactToMouseValues(const MouseEvent& event, bool isMouseDragging) {
 	if (!isMouseDragging) {
-		xOld = event.getPosition().getX() / (getWidth() / MainVar::numBins);
-		xOld = min(max(xOld, 0), MainVar::numBins - 1);
+		xOld = event.getPosition().getX() / (getWidth() / MainVar::numBands);
+		xOld = min(max(xOld, 0), MainVar::numBands - 1);
 		yOld = max(min(event.getPosition().getY(), getHeight()), 0);
 
-		delaySliderValues[xOld] = (float)yOld / getHeight();
-		setBinDelayTimeValue(xOld, min(1.0f, max(0.0f, (delaySliderValues[xOld]))));
+		sliderValues[xOld] = (float)yOld / getHeight();
+		setTargetValues(xOld, min(1.0f, max(0.0f, (sliderValues[xOld]))));
 
 		repaint();
 	}
@@ -57,22 +79,22 @@ void MultiSlider::reactToMouseValues(const MouseEvent& event, bool isMouseDraggi
 		if (mouseIsInsideComponent) {
 			// get x and y values.
 			y = max(min(event.getPosition().getY(), getHeight()), 0);
-			x = event.getPosition().getX() / (getWidth() / MainVar::numBins);
-			x = min(max(x, 0), MainVar::numBins - 1);
+			x = event.getPosition().getX() / (getWidth() / MainVar::numBands);
+			x = min(max(x, 0), MainVar::numBands - 1);
 
 			difference = x - xOld;
 
 			if (difference >= 0) {
 				for (int i = 0; i <= difference; i++) {
 					float yVal;
-					if (difference == 0) { yVal = yOld; }
+					if (difference == 0) { yVal = (float)yOld; }
 					else {
 						yVal = yOld + (y - yOld) * ((float)i / difference);
 					}					
 					
-					delaySliderValues[i+ xOld] = yVal / getHeight();
-					setBinDelayTimeValue(i+ xOld,
-						min(1.0f, max(0.0f, (delaySliderValues[i+ xOld])))
+					sliderValues[i+ xOld] = yVal / getHeight();
+					setTargetValues(i+ xOld,
+						min(1.0f, max(0.0f, (sliderValues[i+ xOld])))
 					);
 					repaint();
 				}
@@ -85,9 +107,9 @@ void MultiSlider::reactToMouseValues(const MouseEvent& event, bool isMouseDraggi
 						yVal = yOld + (y - yOld) * ((float)i / abs(difference) );
 					}
 
-					delaySliderValues[xOld-i] = yVal / getHeight();
-					setBinDelayTimeValue(xOld-i,
-						min(1.0f, max(0.0f, (delaySliderValues[xOld-i])))
+					sliderValues[xOld-i] = yVal / getHeight();
+					setTargetValues(xOld-i,
+						min(1.0f, max(0.0f, (sliderValues[xOld-i])))
 					);
 					repaint();
 				}
@@ -99,24 +121,28 @@ void MultiSlider::reactToMouseValues(const MouseEvent& event, bool isMouseDraggi
 	}
 };
 
-void MultiSlider::setBinDelayTimeValue(int index, float value) {
-	processor.setBinDelayTime(index, value);
+void MultiSlider::setTargetValues(int index, float value) {
+	//variableValues[index] = value;
+	//host->multiSliderValueChanged(this, index, value);
+	if (function != nullptr) {
+		(function)(index, value);
+	}
 }
 
 const float* MultiSlider::getSliderValues() const {
-	return delaySliderValues;
+	return sliderValues;
 }
 
 void MultiSlider::refreshGUIValues(const float* newValues) {
-	for (int i = 0; i < MainVar::numBins; i++) {
-		delaySliderValues[i] = newValues[i];
-		//DBG("new value " << delaySliderValues[i]);
+	for (int i = 0; i < MainVar::numBands; i++) {
+		sliderValues[i] = newValues[i];
+		//DBG("new value " << sliderValues[i]);
 	}
 	repaint();
 }
 
 void MultiSlider::refreshDataValues() {
-	for (int i = 0; i < MainVar::numBins; i++) {
-		setBinDelayTimeValue(i, delaySliderValues[i]);
+	for (int i = 0; i < MainVar::numBands; i++) {
+		setTargetValues(i, sliderValues[i]);
 	}
 }

@@ -9,11 +9,12 @@
 #include "blockDelay.h"
 #include "binDelay.h"
 #include "MainVar.h"
+#include "BineuralData.h"
 
 class OverlapFFT {
 	public:
 		//OverlapFFT();
-		OverlapFFT(); //the used fft function and the amount of windows.
+		OverlapFFT(int chan); //the used fft function and the amount of windows.
 		~OverlapFFT();
 
 		// [1]
@@ -49,15 +50,17 @@ class OverlapFFT {
 			 
 		//GUI variable:
 		bool runFFTs = true;
-		float dryWet = 1.0f;
+
+		//temp
+		float count = 0.0f, pan = 0.0f;
 
 	private:
 		int //numFFTs = 2,
 			startIndex,
 			endIndex,
-			channel,
 			delayLength = 10;
-
+		int channel = 0;
+		float oldDryWet = 0.0f, dryWet = 0.0f;
 
 		// Complexe buffers voor de fft berekeningen
 		ScopedPointer<dsp::Complex<float>> timeBuffer;
@@ -74,6 +77,18 @@ class OverlapFFT {
 
 		// DE FFT PERFORM FUNCTIE ACCEPTEERT ALLEEN FLOATS
 		dsp::FFT fftFunction;
+
+		float interpolateWithNearMags(int index, int nBins, const dsp::Complex<float>* data) {
+			float swag = 0.0f;
+			for (int i = -nBins; i < nBins; i++) {
+				if (index + i >= 0) {
+					swag += data[index + i]._Val[0] * sin(float_Pi * (i + nBins) / (float)(nBins * 2));
+				}
+			}
+			return swag;
+		}
+
+		Fade dryWetFade;
 
 		JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OverlapFFT);
 

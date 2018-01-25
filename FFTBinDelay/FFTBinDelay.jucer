@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="OxeLyD" name="FFTBinDelay" displaySplashScreen="1" reportAppUsage="1"
-              splashScreenColour="Dark" projectType="audioplug" version="2.7.2.2"
+              splashScreenColour="Dark" projectType="audioplug" version="3.0"
               bundleIdentifier="com.yourcompany.FFTBinDelay" includeBinaryInAppConfig="1"
               cppLanguageStandard="11" companyCopyright="GreenSounds" buildVST="1"
               buildVST3="0" buildAU="1" buildAUv3="0" buildRTAS="0" buildAAX="0"
@@ -32,21 +32,26 @@
       <FILE id="FHlgo5" name="MultiSlider.cpp" compile="1" resource="0" file="Source/MultiSlider.cpp"/>
       <FILE id="vWKV7S" name="MultiSlider.h" compile="0" resource="0" file="Source/MultiSlider.h"/>
       <FILE id="x4IAqz" name="MainVar.h" compile="0" resource="0" file="Source/MainVar.h"/>
+      <FILE id="b5P7Or" name="MainVar.cpp" compile="1" resource="0" file="Source/MainVar.cpp"/>
       <FILE id="h7BR2G" name="BineuralData.cpp" compile="1" resource="0"
             file="Source/BineuralData.cpp"/>
       <FILE id="Sa1FSi" name="BineuralData.h" compile="0" resource="0" file="Source/BineuralData.h"/>
     </GROUP>
     <FILE id="UQUju4" name="bindata.bin" compile="0" resource="1" file="Source/bindata.bin"/>
+    <FILE id="A0M9hI" name="fdBinauralData.bin" compile="0" resource="1"
+          file="Source/fdBinauralData.bin"/>
   </MAINGROUP>
   <EXPORTFORMATS>
     <VS2017 targetFolder="Builds/VisualStudio2017" windowsTargetPlatformVersion="10.0.16299.0">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" winWarningLevel="4" generateManifest="1" winArchitecture="x64"
-                       debugInformationFormat="ProgramDatabase" enablePluginBinaryCopyStep="0"
-                       linkTimeOptimisation="0" isDebug="1" optimisation="1" targetName="FFTBinDelay"/>
+                       debugInformationFormat="ProgramDatabase" enablePluginBinaryCopyStep="1"
+                       linkTimeOptimisation="0" isDebug="1" optimisation="1" targetName="FFTBinDelay"
+                       vstBinaryLocation="C:\Program Files (x86)\VstPlugins"/>
         <CONFIGURATION name="Release" winWarningLevel="4" generateManifest="1" winArchitecture="x64"
-                       debugInformationFormat="ProgramDatabase" enablePluginBinaryCopyStep="0"
-                       linkTimeOptimisation="1" isDebug="0" optimisation="3" targetName="FFTBinDelay"/>
+                       debugInformationFormat="ProgramDatabase" enablePluginBinaryCopyStep="1"
+                       linkTimeOptimisation="1" isDebug="1" optimisation="3" targetName="FFTBinDelay"
+                       vstBinaryLocation="C:\Program Files (x86)\VstPlugins"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../../../../../../../Program Files (x86)/JUCE/modules"/>

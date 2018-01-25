@@ -756,8 +756,11 @@ public:
 	}
 
 	float* readBinData(string path, int binSize);
-	ScopedPointer<float> binData;
-	int datalength = BinaryData::bindata_binSize;
+	
+	ScopedPointer<float> tDbinData;
+	ScopedPointer<float> fDbinData; // with Re, Im interleaved
+	int tDdatalength = BinaryData::bindata_binSize;
+	int fDdatalength = BinaryData::fdBinauralData_binSize;
 	
 	//int binDataLen = BinaryData::bindataSize;
 	const char* charBuffer = (const char*)tempUCBuffer;

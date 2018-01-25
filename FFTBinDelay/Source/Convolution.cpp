@@ -10,8 +10,8 @@
 
 #include "Convolution.h"
 
-ConvolveTimeDomainForCallbacks::ConvolveTimeDomainForCallbacks(int buffersize) :
-	inputMemory{ ForwardCircularDelay(8 * buffersize, buffersize), ForwardCircularDelay(8 * buffersize, buffersize) }
-	, bufferSize(buffersize)
-{
-}
+//ConvolveTimeDomainForCallbacks::ConvolveTimeDomainForCallbacks(int buffersize) :
+//	inputMemory{ ForwardCircularDelay(8 * buffersize, buffersize), ForwardCircularDelay(8 * buffersize, buffersize) }
+//	, bufferSize(buffersize)
+//{
+//}

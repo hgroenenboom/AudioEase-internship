@@ -17,20 +17,32 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 #endif
 	, fftFunction(MainVar::fftOrder)
 	, fft2Function(MainVar::fftOrder + 2)
-	, convolver(1 << 12)
 {
+	addParameter(par::dryWet);
+	addParameter(par::feedBack);
 
+	// register wav files format for file playback
 	formatManager.registerBasicFormats(); 
+	// open log file
 	myfile.open("myLog.txt");
 
-	for (int i = 0; i < (sizeof(delayArray) / sizeof(delayArray[0])); i++) {
-		delayArray[i] = 1;
-	}
-
+	// create two instances of the overlap FFT class for each channel.
 	for (int channel = 0; channel < 2; channel++) {
-		oFFT[channel] = new OverlapFFT();
+		oFFT[channel] = new OverlapFFT(channel);
+		oFFT[channel]->binDelay.setPanLocations(panLocation);
 	}
 
+	// intialize delayArray
+	for (int i = 0; i < (sizeof(par::delayArray) / sizeof(par::delayArray[0])); i++) {
+		par::delayArray[i] = 1;
+		//setBinDelayTime(i, 1);
+	}
+
+	// init panning arrays
+	for (int i = 0; i < MainVar::numBands; i++) {
+		panSpeed[i] = 0.5f;
+		panLocation[i] = 0.5f;
+	}
 }
 
 
@@ -105,15 +117,18 @@ void FftbinDelayAudioProcessor::changeProgramName (int index, const String& newN
 //==============================================================================
 void FftbinDelayAudioProcessor::prepareToPlay (double samplerate, int samplesPerBlock)
 {
+	// prepare the transportSource
+	transportSource.stop();
 	transportSource.prepareToPlay(samplesPerBlock, samplerate);
+	// set samplerate
 	if (samplerate != samplerate) {
 		this->sampleRate = (int) samplerate;
 	
+		// create new delaybuffers corresponding to the new samplerate.
 		for (int c = 0; c < 2; c++) {
 			oFFT[c]->setBinDelayWithNewSampleRate( this->sampleRate);
 		}
 	}
-	//openButtonClicked();
 }
 
 void FftbinDelayAudioProcessor::releaseResources()
@@ -151,23 +166,21 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
     ScopedNoDenormals noDenormals;
     const int totalNumInputChannels  = getTotalNumInputChannels();
     const int totalNumOutputChannels = getTotalNumOutputChannels();
-    
-	/* for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples()); */
-
-    //for (int channel = 0; channel < totalNumInputChannels; ++channel)
 	
 	const AudioSourceChannelInfo inputInfo(buffer);
-	if (readerSource == nullptr)
-	{
-		// do nothing 
-	}
-	else {
+	if (!micOn) {
 		inputInfo.clearActiveBufferRegion(); // needed for clean sound
-		transportSource.getNextAudioBlock(inputInfo);
+		if(readerSource != nullptr)
+			transportSource.getNextAudioBlock(inputInfo);
 	}
 
-	if (bypass == false) {
+	for (int i = 0; i < MainVar::numBands; i++) {
+		panLocation[i] += panSpeed[i] * 0.01f - 0.005f;
+		panLocation[i] = fmod(panLocation[i] + 1.0f, 1.0f);
+		//DBG(panLocation[i]);
+	}
+
+	if (!bypass) {
 		for (int channel = 0; channel < 2; ++channel)
 		{
 			// FFT INPUT, MODIFICATIONS & OUTPUT: loop through every sample of the buffer and perform fft if fftSize samples have been received
@@ -184,10 +197,11 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 			else { n++; }*/
 		}
 
+		// TIME BASED Convolution, currently disabled
 		//actualPan += ((panLR - 0.5f) * 0.03);
 		//actualPan = (actualPan < 0.0f) ? actualPan + 1.0f : actualPan;
 		//actualPan = (actualPan > 1.0f) ? actualPan - 1.0f : actualPan;
-		convolver.convolve(buffer, buffer.getNumSamples(), 0.5, ((panLR - 0.5f) * 0.1f), panLR, temp);
+		//convolver.convolve(buffer, buffer.getNumSamples(), 0.5, ((panLR - 0.5f) * 0.1f), panLR, temp);
 	}
 
 	if(muteL) buffer.clear(0, 0, buffer.getNumSamples());
@@ -208,15 +222,52 @@ AudioProcessorEditor* FftbinDelayAudioProcessor::createEditor()
 //==============================================================================
 void FftbinDelayAudioProcessor::getStateInformation (MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+	// Create an outer XML element..
+	XmlElement xml("GREEN-Settings:");
+
+	//for(int i = 0; i <  )
+
+	// add some attributes to it..
+	//xml.setAttribute("uiWidth", lastUIWidth);
+	//xml.setAttribute("uiHeight", lastUIHeight);
+
+	// Store the values of all our parameters, using their param ID as the XML attribute
+	for (auto* param : getParameters())
+		if (auto* p = dynamic_cast<AudioProcessorParameterWithID*> (param))
+			xml.setAttribute(p->paramID, p->getValue());
+
+	getStateOfArray(par::delayArray, MainVar::numBands, "delArr", xml);
+	getStateOfArray(par::ampArray, MainVar::numBands, "ampArr", xml);
+
+	// then use this helper function to stuff it into the binary blob and return it..
+	copyXmlToBinary(xml, destData);
 }
 
 void FftbinDelayAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+	// This getXmlFromBinary() helper function retrieves our XML from the binary blob..
+	ScopedPointer<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
+	if (xmlState != nullptr)
+	{
+		// make sure that it's actually our type of XML object..
+		if (xmlState->hasTagName("GREEN-Settings:"))
+		{
+			// ok, now pull out our last window size..
+			//lastUIWidth = jmax(xmlState->getIntAttribute("uiWidth", lastUIWidth), 400);
+			//lastUIHeight = jmax(xmlState->getIntAttribute("uiHeight", lastUIHeight), 200);
+
+			// Now reload our parameters..
+			for (auto* param : getParameters())
+				if (auto* p = dynamic_cast<AudioProcessorParameterWithID*> (param))
+					p->setValue((float)xmlState->getDoubleAttribute(p->paramID, p->getValue()));
+
+			setStateOfArray(par::delayArray, MainVar::numBands, "delArr", *xmlState);
+			for (int i = 0; i < MainVar::numBands; i++) setBinDelayTime(i, par::delayArray[i]);
+			setStateOfArray(par::ampArray, MainVar::numBands, "ampArr", *xmlState);
+
+		}
+	}
 }
 
 //==============================================================================
@@ -238,14 +289,15 @@ float FftbinDelayAudioProcessor::getFeedbackValue() const {
 }
 
 void FftbinDelayAudioProcessor::setBinDelayTime(int index, float value) {
-	delayArray[index] = value;
+	par::delayArray[index] = value;
+
 	for (int c = 0; c < 2; c++) {
 		oFFT[c]->binDelay.setDelayTime(index, max(0.0f, (1.0f - value) * delayTime) );
 	}
 }
 
 const float* FftbinDelayAudioProcessor::getBinDelayArray() const {
-	return delayArray;
+	return par::delayArray;
 }
 
 void FftbinDelayAudioProcessor::playStopButtonClicked() {
