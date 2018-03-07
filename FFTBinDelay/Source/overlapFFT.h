@@ -26,7 +26,7 @@ class OverlapFFT {
 		void applyFFT(int ovLap); // [3]
 		void applyHannningWindowToFftBuffer(bool longOrShort); // [3.1]
 		void carToPol(float* inReOutM, float* inImOutPhi); // [3.2]
-		void polToCar(float* inMOutRe, float* inPhiOutIm); // [3.3]
+		void polToCar(dsp::Complex<float>& val); // [3.3]
 		void pushFFTDataIntoOutputDelayBuffer(int startIndex, int endIndex); // [4]
 		
 		// [5]
@@ -41,10 +41,10 @@ class OverlapFFT {
 
 		void applyHalfHanningWindow() {
 			//for (int i = 0; i < 5; i++) {
-			//	timeBuffer[i]._Val[0] *= (float)i / 5.0f;
+			//	timeBuffer[i].real( (float)i / 5.0f);
 			//}
-			for (int i = MainVar::fftSize / 2; i < MainVar::fftSize; i++) {
-				timeBuffer[i]._Val[0] *= hanningWindowTimes2[i];
+			for (int i = mVar::fftSize / 2; i < mVar::fftSize; i++) {
+				timeBuffer[i].real( timeBuffer[i].real() * hanningWindowLong[i]);
 			}
 		}
 			 
@@ -73,7 +73,7 @@ class OverlapFFT {
 		int inputForFFTCounter = 0;
 
 		std::vector<float> hanningWindow;
-		std::vector<float> hanningWindowTimes2;
+		std::vector<float> hanningWindowLong;
 
 		// DE FFT PERFORM FUNCTIE ACCEPTEERT ALLEEN FLOATS
 		dsp::FFT fftFunction;
@@ -82,7 +82,7 @@ class OverlapFFT {
 			float swag = 0.0f;
 			for (int i = -nBins; i < nBins; i++) {
 				if (index + i >= 0) {
-					swag += data[index + i]._Val[0] * sin(float_Pi * (i + nBins) / (float)(nBins * 2));
+					swag += data[index + i].real() * sin(float_Pi * (i + nBins) / (float)(nBins * 2));
 				}
 			}
 			return swag;

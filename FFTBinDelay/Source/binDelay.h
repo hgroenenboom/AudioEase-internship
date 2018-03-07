@@ -14,7 +14,7 @@ using namespace std;
 
 class BinDelay {
 	public:
-		BinDelay::BinDelay(int sizeInBlocks, int chan);
+		BinDelay(int sizeInBlocks, int chan);
 		void createIndexArray();
 
 		void writeIntoBinDelay(const dsp::Complex<float>* inputFFT);
@@ -27,7 +27,7 @@ class BinDelay {
 		void setFeedback(float feedbck) { this->feedback = feedbck; }
 		float getFeedback() { return feedback; }
 
-		bool phaseInDelay = true;
+		bool setUse = true;
 
 		void setPanLocations(float* panarry) {
 			panLocations = panarry;
@@ -38,12 +38,12 @@ class BinDelay {
 		//ofstream myfile;
 
 		// indexing parameters
-		int linInc = MainVar::numBands / 4;
-		int dubLinInc = MainVar::numBands / 2;
+		int linInc = mVar::nBands / 4;
+		int dubLinInc = mVar::nBands / 2;
 
-		ScopedPointer<ForwardCircularDelay> delayBands[MainVar::numBands];
-		int indexArray[MainVar::numBands];
-		int numBinsPerBand[MainVar::numBands];
+		ScopedPointer<ForwardCircularDelay> delayBands[mVar::nBands];
+		int indexArray[mVar::nBands];
+		int numBinsPerBand[mVar::nBands];
 
 		int chan = 0;
 		float* panLocations;
@@ -71,7 +71,7 @@ class BinDelay {
 		}
 
 		float readFromBinData(int index, int bin, int re0im1) {
-			return bindata.fDbinData[(int)(panLocations[index] * 24.0f) * 2 * MainVar::fftSize + chan*MainVar::fftSize + (indexArray[index] + bin) * 2 + re0im1];
+			return bindata.fDbinData[(int)(panLocations[index] * 24.0f) * 2 * mVar::fftSize + chan*mVar::fftSize + (indexArray[index] + bin) * 2 + re0im1];
 		}
 
 		float interpolateFromBinData(int index, int bin, int re0im1, int nBins) {

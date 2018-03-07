@@ -23,6 +23,9 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor(FftbinDelayAudi
     // editor's size to whatever you need it to be.
 	startTimer(30);
 
+	addAndMakeVisible(visual);
+	//visual.setOpaque(true);
+
 	delayF = [=](int a, float b) { this->processor.setBinDelayTime(a, b); };
 	addAndMakeVisible(&delaySliders);
 	delaySliders.setFunction(delayF);
@@ -73,9 +76,9 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor(FftbinDelayAudi
 	delayRangeButton.addListener(this);
 	delayRangeButton.setButtonText("delayTime * 100");
 
-	addAndMakeVisible(&phaseDelayButton);
-	phaseDelayButton.addListener(this);
-	phaseDelayButton.setButtonText("Not Used");
+	addAndMakeVisible(&setUseButton);
+	setUseButton.addListener(this);
+	setUseButton.setButtonText("Not Used");
 
 	addAndMakeVisible(&oFFTBypass);
 	oFFTBypass.addListener(this);
@@ -106,6 +109,7 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor(FftbinDelayAudi
 	refreshButtons();
 	refreshSliders();
 
+	//setSize(600, 600);
 	setSize(600, 600);
 
 	processor.transportSource.addChangeListener(this);   // zorgt ervoor dat elke change in transportSource de listener functie acti
@@ -132,35 +136,41 @@ void FftbinDelayAudioProcessorEditor::resized()
 
 	int topHeaderSize = 80;
 	auto topHeader = space.removeFromTop(topHeaderSize);
-		auto micOpenSpace = topHeader.removeFromLeft(getWidth() / nButtons);
-			openButton.setBounds( micOpenSpace.removeFromTop(micOpenSpace.getHeight() / 2) );
-			micOnButton.setBounds(micOpenSpace);
-		playStopButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
-		mainBypass.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
-		auto spaceForFFTBypass = topHeader.removeFromLeft(getWidth() / nButtons);
-			oFFTBypass.setBounds(spaceForFFTBypass.removeFromTop(topHeaderSize  - (int)(topHeaderSize / 2.5f) ));
-			fftBypass.setBounds(spaceForFFTBypass);
-		auto spaceForMuteChan = topHeader.removeFromLeft(getWidth() / nButtons);
-			muteL.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize / 2));
-			muteR.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize));
-		delayRangeButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
-		phaseDelayButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+	auto micOpenSpace = topHeader.removeFromLeft(getWidth() / nButtons);
+	openButton.setBounds(micOpenSpace.removeFromTop(micOpenSpace.getHeight() / 2));
+	micOnButton.setBounds(micOpenSpace);
+	playStopButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+	mainBypass.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+	auto spaceForFFTBypass = topHeader.removeFromLeft(getWidth() / nButtons);
+	oFFTBypass.setBounds(spaceForFFTBypass.removeFromTop(topHeaderSize - (int)(topHeaderSize / 2.5f)));
+	fftBypass.setBounds(spaceForFFTBypass);
+	auto spaceForMuteChan = topHeader.removeFromLeft(getWidth() / nButtons);
+	muteL.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize / 2));
+	muteR.setBounds(spaceForMuteChan.removeFromTop(topHeaderSize));
+	delayRangeButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
+	setUseButton.setBounds(topHeader.removeFromLeft(getWidth() / nButtons));
 
-	auto midHeader = space.removeFromTop(150);
-		feedbackSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 3).removeFromRight(getWidth() - 80) );
-		panSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 2).removeFromRight(getWidth() - 80));
-		dryWetSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight()).removeFromRight(getWidth() - 80));
+	auto midHeader = space.removeFromTop(90);
+	feedbackSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 3).removeFromRight(getWidth() - 80));
+	panSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight() / 2).removeFromRight(getWidth() - 80));
+	dryWetSlider.setBounds(midHeader.removeFromTop(midHeader.getHeight()).removeFromRight(getWidth() - 80));
 
-	space.reduce(40, 40);
+	space.reduce(20, 20);
 	space.removeFromLeft(100);
-		int numMSliders = 3;
-		int remFromTop = (int) (space.getHeight() / (numMSliders + (float)numMSliders * 0.1f));
-		int spce = (int)(space.getHeight() * ((0.2f) / (numMSliders + (float)numMSliders * 0.1f)) );
-		delaySliders.setBounds(space.removeFromTop(remFromTop) );
-		space.removeFromTop(spce);
-		panSliders.setBounds(space.removeFromTop(remFromTop) );
-		space.removeFromTop(spce);
-		ampSliders.setBounds(space.removeFromTop(remFromTop));
+	auto mSlidHeader = space.removeFromTop(space.getHeight() / 4 * 2);
+	//auto mSlidHeader = space;
+	int numMSliders = 3;
+	int remFromTop = (int)(mSlidHeader.getHeight() / (numMSliders + (float)numMSliders * 0.1f));
+	int spce = (int)(mSlidHeader.getHeight() * ((0.2f) / (numMSliders + (float)numMSliders * 0.1f)));
+	delaySliders.setBounds(mSlidHeader.removeFromTop(remFromTop));
+	mSlidHeader.removeFromTop(spce);
+	panSliders.setBounds(mSlidHeader.removeFromTop(remFromTop));
+	mSlidHeader.removeFromTop(spce);
+	ampSliders.setBounds(mSlidHeader.removeFromTop(remFromTop));
+
+	if (space.getHeight() < space.getWidth()) {
+		visual.setBounds(getWidth() * 0.5f - space.getHeight() * 0.5f, space.getY(), space.getHeight(), space.getHeight());
+	}
 }
 
 void FftbinDelayAudioProcessorEditor::timerCallback()  
@@ -215,8 +225,8 @@ void FftbinDelayAudioProcessorEditor::buttonClicked(Button* button)
 	if (button == &delayRangeButton) {
 		rangeButtonClicked();
 	}
-	if (button == &phaseDelayButton) {
-		phaseInDelayButtonClicked();
+	if (button == &setUseButton) {
+		setUseButtonClicked();
 	}
 	if (button == &oFFTBypass) {
 		processor.runoFFT = !processor.runoFFT;
@@ -291,8 +301,8 @@ void FftbinDelayAudioProcessorEditor::refreshButtons() {
 		mainBypass.setColour(TextButton::buttonColourId, Colours::black);
 	}
 
-	refreshButton(delayRangeButton, processor.delayTime == MainVar::delRangeLong);
-	refreshButton(phaseDelayButton, processor.oFFT[0]->binDelay.phaseInDelay);
+	refreshButton(delayRangeButton, processor.delayTime == mVar::delRangeLong);
+	refreshButton(setUseButton, par::setUse);
 	refreshButton(oFFTBypass, processor.runoFFT);
 	refreshButton(fftBypass, processor.oFFT[0]->runFFTs);
 	refreshButton(micOnButton, processor.micOn);
@@ -340,15 +350,15 @@ void FftbinDelayAudioProcessorEditor::bypassButtonClicked() {
 };
 
 void FftbinDelayAudioProcessorEditor::rangeButtonClicked() {
-	if (processor.delayTime == MainVar::delRangeLong) {
+	if (processor.delayTime == mVar::delRangeLong) {
 		delayRangeButton.setColour(TextButton::buttonColourId, Colours::black);
-		processor.delayTime = MainVar::delRangeShort;
+		processor.delayTime = mVar::delRangeShort;
 		delayRangeButton.setButtonText("Short");
 		delayRangeButton.setColour(TextButton::textColourOffId, Colours::lightblue);
 	}
 	else {
 		delayRangeButton.setColour(TextButton::buttonColourId, Colours::green);
-		processor.delayTime = MainVar::delRangeLong;
+		processor.delayTime = mVar::delRangeLong;
 		delayRangeButton.setButtonText("Long");
 		delayRangeButton.setColour(TextButton::textColourOffId, Colours::white);
 	}
@@ -356,20 +366,16 @@ void FftbinDelayAudioProcessorEditor::rangeButtonClicked() {
 	delaySliders.refreshDataValues();
 }
 
-void FftbinDelayAudioProcessorEditor::phaseInDelayButtonClicked() {
-	if (processor.oFFT[0]->binDelay.phaseInDelay) {
-		phaseDelayButton.setColour(TextButton::buttonColourId, Colours::black);
-		processor.oFFT[0]->binDelay.phaseInDelay = false;
-		processor.oFFT[1]->binDelay.phaseInDelay = false;
-		phaseDelayButton.setButtonText("Phase is not in delay");
-		phaseDelayButton.setColour(TextButton::textColourOffId, Colours::lightblue);
+void FftbinDelayAudioProcessorEditor::setUseButtonClicked() {
+	if (par::setUse) {
+		setUseButton.setColour(TextButton::buttonColourId, Colours::black);
+		par::setUse = false;
+		setUseButton.setColour(TextButton::textColourOffId, Colours::lightblue);
 	}
 	else {
-		phaseDelayButton.setColour(TextButton::buttonColourId, Colours::green);
-		processor.oFFT[0]->binDelay.phaseInDelay = true;
-		processor.oFFT[1]->binDelay.phaseInDelay = true;
-		phaseDelayButton.setButtonText("Phase is in delay");
-		phaseDelayButton.setColour(TextButton::textColourOffId, Colours::white);
+		setUseButton.setColour(TextButton::buttonColourId, Colours::green);
+		par::setUse = true;
+		setUseButton.setColour(TextButton::textColourOffId, Colours::white);
 	}
 }
 

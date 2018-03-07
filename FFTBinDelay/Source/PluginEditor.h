@@ -2,6 +2,7 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "Visuals.h"
 #include "PluginProcessor.h"
 #include "MultiSlider.h"
 
@@ -39,7 +40,7 @@ public:
 	void openButtonClicked();
 	void bypassButtonClicked();
 	void rangeButtonClicked();
-	void phaseInDelayButtonClicked();
+	void setUseButtonClicked();
 
 	//void multiSliderValueChanged(MultiSlider &m, int index, float value) {
 	//	if (&m == &delaySliders) {
@@ -68,7 +69,7 @@ private:
 	TextButton oFFTBypass, fftBypass;
 	TextButton muteL, muteR;
 	TextButton delayRangeButton;
-	TextButton phaseDelayButton;
+	TextButton setUseButton;
 	int nButtons = 7;
 
 	Slider feedbackSlider;
@@ -87,6 +88,8 @@ private:
 	MultiSlider ampSliders;
 	std::function<void(int, float)> ampF = nullptr;
 	Label ampLabel;
+
+	Visual visual;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FftbinDelayAudioProcessorEditor)
 };

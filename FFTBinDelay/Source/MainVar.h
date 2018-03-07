@@ -11,19 +11,19 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #pragma once
 
-class MainVar {
+class mVar {
 public:
 	enum {
 		fftOrder = 10,
 		fftSize = 1 << fftOrder,
 		tdSize = 1 << (fftOrder - 2),
-		numBands = 20,
+		nBands = 20,
 		numOverlaps = 1 << 1,
 		maxDelInSec = 5,
 
 		// delay in overlaps
 		delRangeShort = 25,
-		delRangeLong = MainVar::numOverlaps * (44100 / MainVar::fftSize) * MainVar::maxDelInSec
+		delRangeLong = mVar::numOverlaps * (44100 / mVar::fftSize) * mVar::maxDelInSec
 	};
 
 	//static const float temp = 10.0f;
@@ -33,6 +33,10 @@ namespace par {
 	extern AudioParameterFloat* dryWet;
 	extern AudioParameterFloat* feedBack;
 
-	extern float delayArray[MainVar::numBands];
-	extern float ampArray[MainVar::numBands];
+	extern float delayArray[mVar::nBands];
+	extern float ampArray[mVar::nBands];
+	extern float panSpeed[mVar::nBands];
+	extern float panLocation[mVar::nBands];
+
+	extern bool setUse;
 }

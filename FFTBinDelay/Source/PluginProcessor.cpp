@@ -15,8 +15,8 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 #endif 
 	)
 #endif
-	, fftFunction(MainVar::fftOrder)
-	, fft2Function(MainVar::fftOrder + 2)
+	, fftFunction(mVar::fftOrder)
+	, fft2Function(mVar::fftOrder + 2)
 {
 	addParameter(par::dryWet);
 	addParameter(par::feedBack);
@@ -29,7 +29,7 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 	// create two instances of the overlap FFT class for each channel.
 	for (int channel = 0; channel < 2; channel++) {
 		oFFT[channel] = new OverlapFFT(channel);
-		oFFT[channel]->binDelay.setPanLocations(panLocation);
+		oFFT[channel]->binDelay.setPanLocations(par::panLocation);
 	}
 
 	// intialize delayArray
@@ -39,9 +39,9 @@ FftbinDelayAudioProcessor::FftbinDelayAudioProcessor()
 	}
 
 	// init panning arrays
-	for (int i = 0; i < MainVar::numBands; i++) {
-		panSpeed[i] = 0.5f;
-		panLocation[i] = 0.5f;
+	for (int i = 0; i < mVar::nBands; i++) {
+		par::panSpeed[i] = 0.5f;
+		par::panLocation[i] = 0.5f;
 	}
 }
 
@@ -174,10 +174,10 @@ void FftbinDelayAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuf
 			transportSource.getNextAudioBlock(inputInfo);
 	}
 
-	for (int i = 0; i < MainVar::numBands; i++) {
-		panLocation[i] += panSpeed[i] * 0.01f - 0.005f;
-		panLocation[i] = fmod(panLocation[i] + 1.0f, 1.0f);
-		//DBG(panLocation[i]);
+	for (int i = 0; i < mVar::nBands; i++) {
+		par::panLocation[i] += pow(par::panSpeed[i] * 0.2f - 0.1f, 2.0f);
+		par::panLocation[i] = fmod(par::panLocation[i] + 1.0f, 1.0f);
+		//DBG(par::panLocation[i]);
 	}
 
 	if (!bypass) {
@@ -236,8 +236,8 @@ void FftbinDelayAudioProcessor::getStateInformation (MemoryBlock& destData)
 		if (auto* p = dynamic_cast<AudioProcessorParameterWithID*> (param))
 			xml.setAttribute(p->paramID, p->getValue());
 
-	getStateOfArray(par::delayArray, MainVar::numBands, "delArr", xml);
-	getStateOfArray(par::ampArray, MainVar::numBands, "ampArr", xml);
+	getStateOfArray(par::delayArray, mVar::nBands, "delArr", xml);
+	getStateOfArray(par::ampArray, mVar::nBands, "ampArr", xml);
 
 	// then use this helper function to stuff it into the binary blob and return it..
 	copyXmlToBinary(xml, destData);
@@ -262,9 +262,9 @@ void FftbinDelayAudioProcessor::setStateInformation (const void* data, int sizeI
 				if (auto* p = dynamic_cast<AudioProcessorParameterWithID*> (param))
 					p->setValue((float)xmlState->getDoubleAttribute(p->paramID, p->getValue()));
 
-			setStateOfArray(par::delayArray, MainVar::numBands, "delArr", *xmlState);
-			for (int i = 0; i < MainVar::numBands; i++) setBinDelayTime(i, par::delayArray[i]);
-			setStateOfArray(par::ampArray, MainVar::numBands, "ampArr", *xmlState);
+			setStateOfArray(par::delayArray, mVar::nBands, "delArr", *xmlState);
+			for (int i = 0; i < mVar::nBands; i++) setBinDelayTime(i, par::delayArray[i]);
+			setStateOfArray(par::ampArray, mVar::nBands, "ampArr", *xmlState);
 
 		}
 	}

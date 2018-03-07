@@ -6,7 +6,7 @@ MultiSlider::MultiSlider(FftbinDelayAudioProcessor& p, string strng, bool gridOn
 	grid(gridOn)
 {
 	// Init delay values
-	for (int i = 0; i < MainVar::numBands; i++) {
+	for (int i = 0; i < mVar::nBands; i++) {
 		sliderValues[i] = 1.0;
 	}
 
@@ -37,10 +37,10 @@ void MultiSlider::paint(Graphics& g) {
 	}
 
 	g.setColour(Colours::white);
-	for (int i = 0; i < MainVar::numBands; i++) {
-		g.drawRect(i * (ss.getWidth() / MainVar::numBands)
+	for (int i = 0; i < mVar::nBands; i++) {
+		g.drawRect(i * (ss.getWidth() / mVar::nBands)
 			, (int) (sliderValues[i] * ss.getHeight())
-			, ss.getWidth() / MainVar::numBands
+			, ss.getWidth() / mVar::nBands
 			, 1);
 	}
 };
@@ -66,8 +66,8 @@ void MultiSlider::mouseDown(const MouseEvent& event) {
 
 void MultiSlider::reactToMouseValues(const MouseEvent& event, bool isMouseDragging) {
 	if (!isMouseDragging) {
-		xOld = event.getPosition().getX() / (getWidth() / MainVar::numBands);
-		xOld = min(max(xOld, 0), MainVar::numBands - 1);
+		xOld = event.getPosition().getX() / (getWidth() / mVar::nBands);
+		xOld = min(max(xOld, 0), mVar::nBands - 1);
 		yOld = max(min(event.getPosition().getY(), getHeight()), 0);
 
 		sliderValues[xOld] = (float)yOld / getHeight();
@@ -79,8 +79,8 @@ void MultiSlider::reactToMouseValues(const MouseEvent& event, bool isMouseDraggi
 		if (mouseIsInsideComponent) {
 			// get x and y values.
 			y = max(min(event.getPosition().getY(), getHeight()), 0);
-			x = event.getPosition().getX() / (getWidth() / MainVar::numBands);
-			x = min(max(x, 0), MainVar::numBands - 1);
+			x = event.getPosition().getX() / (getWidth() / mVar::nBands);
+			x = min(max(x, 0), mVar::nBands - 1);
 
 			difference = x - xOld;
 
@@ -134,7 +134,7 @@ const float* MultiSlider::getSliderValues() const {
 }
 
 void MultiSlider::refreshGUIValues(const float* newValues) {
-	for (int i = 0; i < MainVar::numBands; i++) {
+	for (int i = 0; i < mVar::nBands; i++) {
 		sliderValues[i] = newValues[i];
 		//DBG("new value " << sliderValues[i]);
 	}
@@ -142,7 +142,7 @@ void MultiSlider::refreshGUIValues(const float* newValues) {
 }
 
 void MultiSlider::refreshDataValues() {
-	for (int i = 0; i < MainVar::numBands; i++) {
+	for (int i = 0; i < mVar::nBands; i++) {
 		setTargetValues(i, sliderValues[i]);
 	}
 }

@@ -41,7 +41,7 @@ private:
 
 	// amount of sliders, value is changeble. Needs to be changed in binDelay too.
 
-	float sliderValues[MainVar::numBands];
+	float sliderValues[mVar::nBands];
 	int newPos = 0;
 
 	// saved mouse positions for interpolation

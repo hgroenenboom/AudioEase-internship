@@ -14,6 +14,10 @@ namespace par {
 	AudioParameterFloat* dryWet = new AudioParameterFloat("wetd", "Wet Dry", 0.0f, 1.0f, 0.0f);
 	AudioParameterFloat* feedBack = new AudioParameterFloat("feedb", "Feedback", 0.0f, 1.0f, 0.6f);
 
-	float delayArray[MainVar::numBands];
-	float ampArray[MainVar::numBands];
+	float delayArray[mVar::nBands];
+	float ampArray[mVar::nBands];
+	float panSpeed[mVar::nBands];
+	float panLocation[mVar::nBands];
+
+	bool setUse = true;
 }
