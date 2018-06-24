@@ -110,7 +110,7 @@ FftbinDelayAudioProcessorEditor::FftbinDelayAudioProcessorEditor(FftbinDelayAudi
 	refreshSliders();
 
 	//setSize(600, 600);
-	setSize(600, 600);
+	setSize(800, 800);
 
 	processor.transportSource.addChangeListener(this);   // zorgt ervoor dat elke change in transportSource de listener functie acti
 }
@@ -133,8 +133,8 @@ void FftbinDelayAudioProcessorEditor::paint (Graphics& g)
 void FftbinDelayAudioProcessorEditor::resized()
 {
 	auto space = getLocalBounds();
+	const int topHeaderSize = 80;
 
-	int topHeaderSize = 80;
 	auto topHeader = space.removeFromTop(topHeaderSize);
 	auto micOpenSpace = topHeader.removeFromLeft(getWidth() / nButtons);
 	openButton.setBounds(micOpenSpace.removeFromTop(micOpenSpace.getHeight() / 2));
@@ -158,7 +158,6 @@ void FftbinDelayAudioProcessorEditor::resized()
 	space.reduce(20, 20);
 	space.removeFromLeft(100);
 	auto mSlidHeader = space.removeFromTop(space.getHeight() / 4 * 2);
-	//auto mSlidHeader = space;
 	int numMSliders = 3;
 	int remFromTop = (int)(mSlidHeader.getHeight() / (numMSliders + (float)numMSliders * 0.1f));
 	int spce = (int)(mSlidHeader.getHeight() * ((0.2f) / (numMSliders + (float)numMSliders * 0.1f)));

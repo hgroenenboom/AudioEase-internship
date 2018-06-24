@@ -10,8 +10,8 @@
               pluginCode="Oxel" pluginChannelConfigs="" pluginIsSynth="0" pluginWantsMidiIn="0"
               pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0" pluginEditorRequiresKeys="0"
               pluginAUExportPrefix="FFTBinDelayAU" pluginRTASCategory="" aaxIdentifier="com.yourcompany.FFTBinDelay"
-              pluginAAXCategory="AAX_ePlugInCategory_Dynamics" jucerVersion="5.2.0"
-              companyName="GreenSounds" companyEmail="haroldgroenenboom@gmail.com">
+              pluginAAXCategory="2" jucerVersion="5.3.2" companyName="GreenSounds"
+              companyEmail="haroldgroenenboom@gmail.com" pluginFormats="buildVST,buildAU,buildStandalone">
   <MAINGROUP id="pORTYO" name="FFTBinDelay">
     <GROUP id="{904BC46F-D7BB-1525-D1DD-4B7F367B7A61}" name="Source">
       <FILE id="tJ77Gx" name="Convolution.cpp" compile="1" resource="0" file="Source/Convolution.cpp"/>
@@ -121,4 +121,7 @@
     <MODULE id="juce_video" showAllCode="1" useLocalCopy="1" useGlobalPath="0"/>
   </MODULES>
   <JUCEOPTIONS JUCE_QUICKTIME="disabled"/>
+  <LIVE_SETTINGS>
+    <WINDOWS/>
+  </LIVE_SETTINGS>
 </JUCERPROJECT>
